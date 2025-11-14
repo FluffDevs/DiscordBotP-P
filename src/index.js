@@ -85,6 +85,10 @@ client.on('messageCreate', async (message) => {
   const cmd = args.shift().toLowerCase();
   const command = commands.get(cmd);
   if (!command) return;
+  // Log who invoked the prefix command
+  try {
+    logger.info(`Prefix command invoked: ${cmd} by ${message.author.tag} (${message.author.id}) in guild=${message.guild ? message.guild.id : 'DM'} channel=${message.channel.id} args=${JSON.stringify(args)}`);
+  } catch (e) { /* ignore logging failure */ }
   try {
     await command.execute(message, args);
   } catch (err) {
@@ -98,6 +102,11 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   const cmd = slashCommands.get(interaction.commandName);
   if (!cmd) return;
+  // Log who invoked the slash command
+  try {
+    const opts = interaction.options?.data ? JSON.stringify(interaction.options.data) : '';
+    logger.info(`Slash command invoked: ${interaction.commandName} by ${interaction.user.tag} (${interaction.user.id}) in guild=${interaction.guild ? interaction.guild.id : 'DM'} channel=${interaction.channel ? interaction.channel.id : 'unknown'} options=${opts}`);
+  } catch (e) { /* ignore logging failure */ }
   try {
     await cmd.execute(interaction);
   } catch (err) {

@@ -188,7 +188,7 @@ export function initVerification(client) {
       }
       const title = `${member.user.username}`;
       const contentLines = [];
-      contentLines.push(`Nouvelle demande de vérification pour: **${member.user.tag}** (<@${member.id}>)`);
+      contentLines.push(`Nouvelle demande de vérification pour: **${member.user.tag}** (<@${member.id}>) Accepter : oui/non`);
       contentLines.push('---');
       for (const a of answers) contentLines.push(`**${a.question}**\n${a.answer}`);
       contentLines.push('\n\n*Meta: verification_member_id:' + member.id + '*');
@@ -218,6 +218,66 @@ export function initVerification(client) {
 
     } catch (err) {
       logger.error('Erreur dans runVerificationForMember: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  // Helper: accepter une vérification (utilisé par réactions et messages 'oui')
+  async function handleAccept(guild, channel, moderatorUser, targetId) {
+    try {
+      const target = await guild.members.fetch(targetId).catch(() => null);
+      if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
+
+      // Retirer NON_VERIFIED_ROLE si configuré
+      if (nonVerifiedRole) {
+        const r = guild.roles.cache.get(nonVerifiedRole) || guild.roles.cache.find(x => x.name === nonVerifiedRole);
+        if (r) {
+          logger.debug(`Tentative suppression du rôle non-vérifié (${r.id || r.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorUser.id})`);
+          const ok = await tryRoleOperation(() => target.roles.remove(r), `retirer le rôle ${r.id || r.name} à ${target.id}`, channel);
+          if (ok) logger.info(`Rôle non-vérifié retiré: role=${r.id || r.name} target=${target.id} guild=${guild.id} by=${moderatorUser.id}`);
+        } else {
+          logger.warn(`nonVerifiedRole configuré mais introuvable sur la guild: ${nonVerifiedRole} (guild=${guild.id})`);
+        }
+      }
+
+      // Ajouter PELUCHER_ROLE si configuré
+      if (pelucheRole) {
+        const r2 = guild.roles.cache.get(pelucheRole) || guild.roles.cache.find(x => x.name === pelucheRole);
+        if (r2) {
+          logger.debug(`Tentative ajout du rôle peluche (${r2.id || r2.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorUser.id})`);
+          const ok2 = await tryRoleOperation(() => target.roles.add(r2), `ajouter le rôle ${r2.id || r2.name} à ${target.id}`, channel);
+          if (ok2) logger.info(`Rôle peluche appliqué: role=${r2.id || r2.name} target=${target.id} guild=${guild.id} by=${moderatorUser.id}`);
+        } else {
+          logger.warn(`pelucheRole configuré mais introuvable sur la guild: ${pelucheRole} (guild=${guild.id})`);
+        }
+      }
+
+      try { await target.send(`Félicitations — votre vérification a été acceptée sur ${guild.name}. Vous avez reçu le rôle.`).catch(() => {}); } catch (err) {}
+      await channel.send(`✅ Vérification acceptée par <@${moderatorUser.id}> — rôle appliqué à <@${target.id}>.`).catch(() => {});
+    } catch (err) {
+      logger.error('Erreur dans handleAccept: ' + (err && err.message ? err.message : String(err)));
+      logger.debug(err && err.stack ? err.stack : String(err));
+      await channel.send(`Erreur lors de l'application des rôles.`).catch(() => {});
+    }
+  }
+
+  // Helper: refuser une vérification (utilisé par réactions et messages 'non')
+  async function handleReject(guild, channel, moderatorUser, targetId) {
+    try {
+      const target = await guild.members.fetch(targetId).catch(() => null);
+      if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
+
+      await channel.send(`<@${moderatorUser.id}> Merci de fournir une justification du refus en répondant dans ce fil. Vous avez 30 minutes.`).catch(() => {});
+      const filter = m => m.author.id === moderatorUser.id;
+      const collector = channel.createMessageCollector({ filter, max: 1, time: 30 * 60 * 1000 });
+      collector.on('collect', async (m) => {
+        const justification = m.content;
+        try {
+          await target.send(`Votre vérification a été refusée sur ${guild.name}. Raison donnée par l'équipe :\n\n${justification}`).catch(() => {});
+          await channel.send(`Refus enregistré par <@${moderatorUser.id}> et transmis au membre.`).catch(() => {});
+        } catch (err) { await channel.send(`Impossible d'envoyer la justification au membre (DM peut être fermé).`).catch(() => {}); }
+      });
+    } catch (err) {
+      logger.error('Erreur dans handleReject: ' + (err && err.message ? err.message : String(err)));
     }
   }
 
@@ -270,53 +330,65 @@ export function initVerification(client) {
       if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
 
       if (emoji === '✅') {
-        try {
-          const botMember = guild.members.me || (await guild.members.fetch(client.user.id).catch(() => null));
-          // Remove NON_VERIFIED_ROLE if configured
-          if (nonVerifiedRole) {
-            const r = guild.roles.cache.get(nonVerifiedRole) || guild.roles.cache.find(x => x.name === nonVerifiedRole);
-            if (r) {
-              logger.debug(`Tentative suppression du rôle non-vérifié (${r.id || r.name}) pour membre ${target.id} sur guild ${guild.id}`);
-              const ok = await tryRoleOperation(() => target.roles.remove(r), `retirer le rôle ${r.id || r.name} à ${target.id}`, channel);
-              if (ok) logger.info(`Rôle non-vérifié retiré: role=${r.id || r.name} target=${target.id} guild=${guild.id}`);
-            } else {
-              logger.warn(`nonVerifiedRole configuré mais introuvable sur la guild: ${nonVerifiedRole} (guild=${guild.id})`);
-            }
-          }
-
-          // Add PELUCHER_ROLE if configured
-          if (pelucheRole) {
-            const r2 = guild.roles.cache.get(pelucheRole) || guild.roles.cache.find(x => x.name === pelucheRole);
-            if (r2) {
-              logger.debug(`Tentative ajout du rôle peluche (${r2.id || r2.name}) pour membre ${target.id} sur guild ${guild.id}`);
-              const ok2 = await tryRoleOperation(() => target.roles.add(r2), `ajouter le rôle ${r2.id || r2.name} à ${target.id}`, channel);
-              if (ok2) logger.info(`Rôle peluche appliqué: role=${r2.id || r2.name} target=${target.id} guild=${guild.id}`);
-            } else {
-              logger.warn(`pelucheRole configuré mais introuvable sur la guild: ${pelucheRole} (guild=${guild.id})`);
-            }
-          }
-
-          try { await target.send(`Félicitations — votre vérification a été acceptée sur ${guild.name}. Vous avez reçu le rôle.`).catch(() => {}); } catch (err) {}
-          await channel.send(`✅ Vérification acceptée par <@${user.id}> — rôle appliqué à <@${target.id}>.`).catch(() => {});
-        } catch (err) {
-          logger.error('Erreur lors de l attribution des rôles: ' + (err && err.message ? err.message : String(err)));
-          logger.debug(err && err.stack ? err.stack : String(err));
-          await channel.send(`Erreur lors de l'application des rôles.`).catch(() => {});
-        }
+        await handleAccept(guild, channel, user, targetId);
       } else if (emoji === '❌') {
-        await channel.send(`<@${user.id}> Merci de fournir une justification du refus en répondant dans ce fil. Vous avez 30 minutes.`).catch(() => {});
-        const filter = m => m.author.id === user.id;
-        const collector = channel.createMessageCollector({ filter, max: 1, time: 30 * 60 * 1000 });
-        collector.on('collect', async (m) => {
-          const justification = m.content;
-          try {
-            await target.send(`Votre vérification a été refusée sur ${guild.name}. Raison donnée par l'équipe :\n\n${justification}`).catch(() => {});
-            await channel.send(`Refus enregistré par <@${user.id}> et transmis au membre.`).catch(() => {});
-          } catch (err) { await channel.send(`Impossible d'envoyer la justification au membre (DM peut être fermé).`).catch(() => {}); }
-        });
+        await handleReject(guild, channel, user, targetId);
       }
 
     } catch (err) { logger.error('Erreur dans messageReactionAdd: ' + (err && err.message ? err.message : String(err))); }
+  });
+
+  // Permettre au staff de valider/refuser en tapant "oui" / "non" dans le fil
+  client.on('messageCreate', async (msg) => {
+    try {
+      if (msg.author.bot) return;
+      const channel = msg.channel;
+      const guild = msg.guild;
+      if (!guild) return;
+      if (!channel?.isThread || !channel.isThread()) return; // only handle thread messages
+
+      // vérifier que l'auteur est autorisé (manageGuild ou role verifier)
+      const member = await guild.members.fetch(msg.author.id).catch(() => null);
+      if (!member) return;
+      let allowed = false;
+      if (member.permissions && member.permissions.has(PermissionsBitField.Flags.ManageGuild)) allowed = true;
+      if (verifierRole) {
+        const r = guild.roles.cache.get(verifierRole) || guild.roles.cache.find(x => x.name === verifierRole);
+        if (r && member.roles.cache.has(r.id)) allowed = true;
+      }
+      if (!allowed) return;
+
+      // trouver le targetId (par topic ou contenu du message initial)
+      let targetId = null;
+      const topic = channel.topic ?? '';
+      const mtopic = topic.match(/verification:(\d+)/);
+      if (mtopic) targetId = mtopic[1];
+      if (!targetId) {
+        const starter = await channel.fetchStarterMessage().catch(() => null);
+        if (starter && starter.content) {
+          const mm = starter.content.match(/verification_member_id:(\d+)/);
+          if (mm) targetId = mm[1];
+        }
+      }
+      if (!targetId) {
+        const mm2 = msg.content.match(/verification_member_id:(\d+)/);
+        if (mm2) targetId = mm2[1];
+      }
+      if (!targetId) {
+        const mention = msg.mentions.users.first();
+        if (mention) targetId = mention.id;
+      }
+      if (!targetId) return; // nothing to do
+
+      const text = (msg.content || '').toLowerCase().trim();
+      const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved)\b/;
+      const rejectRe = /^\s*(?:non|n|no|reject|refuse|refuser|deny|denied)\b/;
+      if (acceptRe.test(text)) {
+        await handleAccept(guild, channel, msg.author, targetId);
+      } else if (rejectRe.test(text)) {
+        await handleReject(guild, channel, msg.author, targetId);
+      }
+    } catch (err) { logger.error('Erreur dans messageCreate (thread quick-validate): ' + (err && err.message ? err.message : String(err))); }
   });
 
   // Gestion du bouton request_verif : renvoie le message de vérification au membre qui clique
@@ -343,5 +415,9 @@ export function initVerification(client) {
   });
 
   // Fournir une fonction exportée pour déclencher la vérification depuis d'autres modules si besoin
+  // Attacher la fonction au client pour y accéder depuis des commandes externes (ex: !msgverif)
+  try {
+    client.runVerificationForMember = runVerificationForMember;
+  } catch (e) { /* ignore */ }
   return { runVerificationForMember };
 }

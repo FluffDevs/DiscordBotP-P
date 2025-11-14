@@ -27,6 +27,19 @@ export default {
 
     const row = new ActionRowBuilder().addComponents(button);
 
-    await interaction.reply({ content: 'Cliquez sur le bouton ci-dessous pour recevoir le message de vérification en DM.', components: [row] });
+    // Send the visible button message to the channel but avoid leaving a reply to the user
+    try {
+      // Acknowledge the interaction silently (ephemeral) then post the actual message to the channel
+      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      if (interaction.channel) {
+        await interaction.channel.send({ content: 'Cliquez sur le bouton ci-dessous pour recevoir le message de vérification en DM.', components: [row] });
+      } else {
+        await interaction.followUp({ content: 'Impossible d\'envoyer le message de vérification ici (canal introuvable).', ephemeral: true }).catch(() => {});
+      }
+    } catch (err) {
+      await interaction.followUp({ content: 'Erreur lors de l\'envoi du message de vérification.', ephemeral: true }).catch(() => {});
+    }
+    // Remove the ephemeral acknowledgement so the user doesn't see any reply
+    try { await interaction.deleteReply().catch(() => {}); } catch (e) { /* ignore */ }
   }
 };

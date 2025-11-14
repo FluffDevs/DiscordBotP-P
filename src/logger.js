@@ -3,7 +3,17 @@ import path from 'path';
 
 const LOG_DIR = path.join(process.cwd(), 'logs');
 try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (e) { /* ignore */ }
-const LOG_FILE = path.join(LOG_DIR, 'app.log');
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function currentLogFile() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hour = pad(d.getHours());
+  // File per hour: app-YYYY-MM-DD-HH.log
+  return path.join(LOG_DIR, `app-${year}-${month}-${day}-${hour}.log`);
+}
 
 function timestamp() {
   return new Date().toISOString();
@@ -11,7 +21,7 @@ function timestamp() {
 
 function write(level, msg) {
   const line = `[${timestamp()}] [${level.toUpperCase()}] ${typeof msg === 'string' ? msg : JSON.stringify(msg)}\n`;
-  try { fs.appendFileSync(LOG_FILE, line, 'utf8'); } catch (e) { /* ignore file write errors */ }
+  try { fs.appendFileSync(currentLogFile(), line, 'utf8'); } catch (e) { /* ignore file write errors */ }
   // echo to console with simple coloring
   if (level === 'error') console.error(line.trim());
   else if (level === 'warn') console.warn(line.trim());
