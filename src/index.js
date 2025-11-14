@@ -71,7 +71,7 @@ if (fs.existsSync(slashCommandsPath)) {
   console.log('Aucun dossier slash-commands/ trouvé — créez `src/slash-commands` pour y placer des commandes slash.');
 }
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`${client.user.tag} connecté`);
 });
 

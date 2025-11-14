@@ -40,11 +40,35 @@ if (fs.existsSync(commandsPath)) {
 
 const rest = new REST({ version: '10' }).setToken(token);
 
+/* Deployment modes:
+ - If GUILD_ID is set to a specific id => deploy to that guild (instant)
+ - If GUILD_ID is set to 'ALL' OR DEPLOY_ALL_GUILDS=true => fetch all guilds the bot is in and deploy to each (instant, one-by-one)
+ - Otherwise => deploy global commands (may take up to 1 hour)
+*/
 try {
-  if (guildId) {
+  if (guildId && guildId !== 'ALL') {
     console.log(`Déploiement des ${commands.length} commandes au guild ${guildId}...`);
     const data = await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
     console.log('Commandes déployées (guild):', data.length);
+  } else if (guildId === 'ALL' || process.env.DEPLOY_ALL_GUILDS === 'true') {
+    console.log('Récupération des guilds du bot et déploiement sur chacune...');
+    // Get the list of guilds the bot is in
+    const guilds = await rest.get(Routes.userGuilds());
+    if (!Array.isArray(guilds) || guilds.length === 0) {
+      console.log('Aucune guild trouvée pour ce bot.');
+    } else {
+      for (const g of guilds) {
+        try {
+          console.log(`Déploiement pour guild ${g.id} ${g.name ? `(${g.name})` : ''}...`);
+          const data = await rest.put(Routes.applicationGuildCommands(clientId, g.id), { body: commands });
+          console.log(`  OK — ${data.length} commandes déployées`);
+          // courte pause pour limiter les risques de rate-limit
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (err) {
+          console.error(`Erreur lors du déploiement pour la guild ${g.id}:`, err);
+        }
+      }
+    }
   } else {
     console.log(`Déploiement des ${commands.length} commandes en global (cela peut prendre jusqu'à 1 heure)...`);
     const data = await rest.put(Routes.applicationCommands(clientId), { body: commands });
