@@ -1,3 +1,8 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
 import dotenv from 'dotenv';
 dotenv.config();
 

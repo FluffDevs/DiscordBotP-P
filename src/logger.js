@@ -1,8 +1,16 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
 import fs from 'fs';
 import path from 'path';
 
 const LOG_DIR = path.join(process.cwd(), 'logs');
 try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (e) { /* ignore */ }
+
+// Header that must appear at the top of every log file
+const LOG_HEADER = `/*\n * Peluche Bot — programme personnel de Electro / MathéoCASSY\n * https://github.com/MatheoCASSY/\n */\n\n`;
 
 function pad(n) { return String(n).padStart(2, '0'); }
 function currentLogFile() {
@@ -21,7 +29,15 @@ function timestamp() {
 
 function write(level, msg) {
   const line = `[${timestamp()}] [${level.toUpperCase()}] ${typeof msg === 'string' ? msg : JSON.stringify(msg)}\n`;
-  try { fs.appendFileSync(currentLogFile(), line, 'utf8'); } catch (e) { /* ignore file write errors */ }
+  const file = currentLogFile();
+  try {
+    // If the file doesn't exist or is empty, ensure the header is written first
+    try {
+      const stat = fs.existsSync(file) ? fs.statSync(file) : null;
+      if (!stat || stat.size === 0) fs.appendFileSync(file, LOG_HEADER, 'utf8');
+    } catch (e) { /* ignore stat errors */ }
+    fs.appendFileSync(file, line, 'utf8');
+  } catch (e) { /* ignore file write errors */ }
   // echo to console with simple coloring
   if (level === 'error') console.error(line.trim());
   else if (level === 'warn') console.warn(line.trim());

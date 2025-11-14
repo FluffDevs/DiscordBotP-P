@@ -1,26 +1,11 @@
-[2025-11-14T23:01:26.141Z] [INFO] Chargée commande: msgverif
-[2025-11-14T23:01:26.146Z] [INFO] Chargée commande: ping
-[2025-11-14T23:01:26.151Z] [INFO] Chargée commande: say
-[2025-11-14T23:01:26.212Z] [INFO] Chargée slash-commande: msgverif
-[2025-11-14T23:01:26.217Z] [INFO] Chargée slash-commande: ping
-[2025-11-14T23:01:26.227Z] [INFO] Chargée slash-commande: say
-[2025-11-14T23:01:27.494Z] [INFO] Peluche Bot#6916 connecté
-[2025-11-14T23:01:35.879Z] [INFO] Prefix command invoked: msgverif by electro__33 (403244927301058563) in guild=1289105777726062624 channel=1336316334711246869 args=[]
-[2025-11-14T23:07:16.529Z] [INFO] Chargée commande: msgverif
-[2025-11-14T23:07:16.540Z] [INFO] Chargée commande: ping
-[2025-11-14T23:07:16.546Z] [INFO] Chargée commande: say
-[2025-11-14T23:07:16.556Z] [INFO] Chargée slash-commande: msgverif
-[2025-11-14T23:07:16.568Z] [INFO] Chargée slash-commande: ping
-[2025-11-14T23:07:16.579Z] [INFO] Chargée slash-commande: say
-[2025-11-14T23:07:17.560Z] [INFO] Peluche Bot#6916 connecté
-[2025-11-14T23:07:30.086Z] [INFO] Prefix command invoked: msgverif by electro__33 (403244927301058563) in guild=1289105777726062624 channel=1336316334711246869 args=[]
-[2025-11-14T23:07:30.093Z] [INFO] Lancement vérification pour: electro__33
-[2025-11-14T23:08:26.350Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1289105777726062624 channel=1336316334711246869 options=[]
-[2025-11-14T23:08:43.400Z] [INFO] Chargée commande: ping
-[2025-11-14T23:08:43.412Z] [INFO] Chargée commande: say
-[2025-11-14T23:08:43.423Z] [INFO] Chargée slash-commande: msgverif
-[2025-11-14T23:08:43.434Z] [INFO] Chargée slash-commande: ping
-[2025-11-14T23:08:43.446Z] [INFO] Chargée slash-commande: say
-[2025-11-14T23:08:44.577Z] [INFO] Peluche Bot#6916 connecté
-[2025-11-14T23:08:49.940Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1289105777726062624 channel=1336316334711246869 options=[]
-[2025-11-14T23:09:01.984Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1289105777726062624 channel=1336316334711246869 options=[]
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-14T23:18:10.569Z] [INFO] Chargée commande: ping
+[2025-11-14T23:18:10.583Z] [INFO] Chargée commande: say
+[2025-11-14T23:18:10.594Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-14T23:18:10.605Z] [INFO] Chargée slash-commande: ping
+[2025-11-14T23:18:10.624Z] [INFO] Chargée slash-commande: say
+[2025-11-14T23:18:11.850Z] [INFO] Peluche Bot#6916 connecté

@@ -1,5 +1,9 @@
 import { PermissionFlagsBits } from 'discord.js';
 import logger from '../logger.js';
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
 
 export default {
   name: 'say',

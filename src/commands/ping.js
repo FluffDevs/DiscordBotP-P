@@ -5,3 +5,7 @@ export default {
     return message.reply('Pong 🏓(!)');
   }
 };
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
