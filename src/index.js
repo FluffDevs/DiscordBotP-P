@@ -5,6 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import { initVerification } from './verification.js';
+import logger from './logger.js';
 
 const token = process.env.DISCORD_TOKEN;
 const prefix = process.env.PREFIX ?? '!';
@@ -16,7 +18,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages
   ],
-  partials: [Partials.Channel]
+  // We need additional partials to correctly handle reactions and messages in DMs/threads
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User]
 });
 
 // Setup commands collection
@@ -37,16 +40,16 @@ if (fs.existsSync(commandsPath)) {
       const command = mod.default ?? mod;
       if (command && command.name) {
         commands.set(command.name, command);
-        console.log(`Chargée commande: ${command.name}`);
+        logger.info(`Chargée commande: ${command.name}`);
       } else {
-        console.warn(`Fichier de commande ${file} n'exporte pas un objet { name, execute }`);
+        logger.warn(`Fichier de commande ${file} n'exporte pas un objet { name, execute }`);
       }
     } catch (err) {
-      console.error(`Erreur en important la commande ${file}:`, err && err.message ? err.message : err);
+      logger.error(`Erreur en important la commande ${file}: ${err && err.message ? err.message : String(err)}`);
     }
   }
 } else {
-  console.log('Aucun dossier commands/ trouvé — créez `src/commands` pour y placer des commandes.');
+  logger.warn('Aucun dossier commands/ trouvé — créez `src/commands` pour y placer des commandes.');
 }
 
 // Charger les slash-commands
@@ -59,20 +62,20 @@ if (fs.existsSync(slashCommandsPath)) {
       const command = mod.default ?? mod;
       if (command && command.data && command.data.name) {
         slashCommands.set(command.data.name, command);
-        console.log(`Chargée slash-commande: ${command.data.name}`);
+        logger.info(`Chargée slash-commande: ${command.data.name}`);
       } else {
-        console.warn(`Fichier de slash-command ${file} n'exporte pas { data, execute }`);
+        logger.warn(`Fichier de slash-command ${file} n'exporte pas { data, execute }`);
       }
     } catch (err) {
-      console.error(`Erreur en important la slash-command ${file}:`, err && err.message ? err.message : err);
+      logger.error(`Erreur en important la slash-command ${file}: ${err && err.message ? err.message : String(err)}`);
     }
   }
 } else {
-  console.log('Aucun dossier slash-commands/ trouvé — créez `src/slash-commands` pour y placer des commandes slash.');
+  logger.warn('Aucun dossier slash-commands/ trouvé — créez `src/slash-commands` pour y placer des commandes slash.');
 }
 
 client.once('clientReady', () => {
-  console.log(`${client.user.tag} connecté`);
+  logger.info(`${client.user.tag} connecté`);
 });
 
 client.on('messageCreate', async (message) => {
@@ -85,7 +88,7 @@ client.on('messageCreate', async (message) => {
   try {
     await command.execute(message, args);
   } catch (err) {
-    console.error('Erreur lors de l\'exécution de la commande', cmd, err);
+    logger.error(`Erreur lors de l'exécution de la commande ${cmd}: ${err && err.message ? err.message : String(err)}`);
     message.reply('Une erreur est survenue lors de l\'exécution de la commande.');
   }
 });
@@ -98,7 +101,7 @@ client.on('interactionCreate', async (interaction) => {
   try {
     await cmd.execute(interaction);
   } catch (err) {
-    console.error('Erreur lors de l\'exécution de la slash-command', interaction.commandName, err);
+    logger.error(`Erreur lors de l'exécution de la slash-command ${interaction.commandName}: ${err && err.message ? err.message : String(err)}`);
     if (interaction.replied || interaction.deferred) {
       interaction.followUp({ content: 'Une erreur est survenue lors de l\'exécution de la commande.', ephemeral: true });
     } else {
@@ -108,9 +111,11 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 if (!token) {
-  console.warn('Aucun token détecté dans .env (DISCORD_TOKEN). Remplissez .env avant de démarrer le bot.');
+  logger.warn('Aucun token détecté dans .env (DISCORD_TOKEN). Remplissez .env avant de démarrer le bot.');
 } else {
   client.login(token).catch(err => {
-    console.error('Échec login :', err && err.message ? err.message : err);
+    logger.error('Échec login : ' + (err && err.message ? err.message : String(err)));
   });
+  // Initialiser la logique de vérification (gestion des nouveaux membres, réactions, etc.)
+  initVerification(client);
 }

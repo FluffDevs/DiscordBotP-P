@@ -2,6 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import logger from '../logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,18 +53,20 @@ export default {
             const avatar = typeof interaction.user.displayAvatarURL === 'function' ? interaction.user.displayAvatarURL() : undefined;
             const webhook = await interaction.channel.createWebhook({ name: webhookName, avatar });
             await webhook.send({ content: text });
-            try { await webhook.delete('cleanup after /say'); } catch (e) { /* ignore */ }
+            try { await webhook.delete('cleanup after /say'); } catch (e) { logger.debug(`webhook cleanup failed (/say): ${e && e.message ? e.message : e}`); }
+            logger.info(`/say sent via webhook by ${interaction.user.tag} in ${interaction.guild ? interaction.guild.id : 'DM'}`);
             return interaction.editReply({ content: 'Message envoyé (via webhook).' });
           } catch (err) {
-            console.error('Erreur lors de l\'envoi via webhook (fallback to normal send):', err);
+            logger.error(['Erreur lors de l\'envoi via webhook (fallback to normal send):', err]);
             // fallback to normal send below
           }
         }
         try {
           await interaction.channel.send(text);
+          logger.info(`/say sent as channel message by ${interaction.user.tag} in ${interaction.guild ? interaction.guild.id : 'DM'}`);
           return interaction.editReply({ content: 'Message envoyé.' });
         } catch (err2) {
-          console.error('Erreur lors de l\'envoi du message:', err2);
+          logger.error(['Erreur lors de l\'envoi du message:', err2]);
           if (!interaction.replied && !interaction.deferred) {
             return interaction.reply({ content: `Erreur lors de l'envoi: ${err2.message || String(err2)}`, ephemeral: true });
           }
@@ -86,7 +89,7 @@ export default {
       if (!name) return interaction.reply({ content: 'Aucune commande fournie.', ephemeral: true });
 
       // Try to load command module from src/commands/<name>.js
-      const commandFile = path.join(__dirname, '..', 'commands', `${name}.js`);
+  const commandFile = path.join(__dirname, '..', 'commands', `${name}.js`);
       if (!fs.existsSync(commandFile)) {
         return interaction.reply({ content: `Commande introuvable: ${name}`, ephemeral: true });
       }
@@ -117,11 +120,13 @@ export default {
       const res = await command.execute(fakeMessage, args);
       // If the command didn't send a reply through fakeMessage.reply, send a confirmation
       if (!interaction.replied && !interaction.deferred) {
+        logger.info(`/say executed internal command ${name} by ${interaction.user.tag}`);
         return interaction.reply({ content: `Commande \`${name}\` exécutée.` });
       }
       return null;
     } catch (err) {
-      console.error('Erreur dans /say execute:', err);
+      logger.error(['Erreur dans /say execute:', err]);
+      logger.debug(err && err.stack ? err.stack : String(err));
       return interaction.reply({ content: `Erreur lors de l'exécution: ${err.message || String(err)}`, ephemeral: true });
     }
   }
