@@ -84,6 +84,9 @@ export function initVerification(client) {
   const pelucheRole = (typeof pelucheRoleRaw === 'string' ? pelucheRoleRaw.trim() : pelucheRoleRaw);
   const verifierRoleRaw = getEnv('VERIFIER_ROLE'); // optional role allowed to validate
   const verifierRole = (typeof verifierRoleRaw === 'string' ? verifierRoleRaw.trim() : verifierRoleRaw);
+  // Role ID to ping when a verification post is created (will notify staff)
+  // Remplacez par l'ID souhaité ou mettez en variable d'environnement si nécessaire.
+  const notifyRoleId = '1439047400193790152';
   const questionsEnv = getEnv('QUESTIONS');
   // VERIF_MESSAGE_MD can be used to define a full markdown message sent to the user.
   // For convenience, QUESTIONS can now be used as an alias for VERIF_MESSAGE_MD (markdown string),
@@ -142,11 +145,51 @@ export function initVerification(client) {
               collectedMsgs.push(m.content);
             }
           });
-          // attendre la fin
-          await new Promise(resolve => collector.on('end', resolve));
+          // attendre la fin et récupérer la raison (ex: 'time' ou 'done')
+          const endInfo = await new Promise(resolve => collector.on('end', (collected, reason) => resolve({ collected, reason })));
+          const reason = endInfo && endInfo.reason ? endInfo.reason : undefined;
 
           const combined = collectedMsgs.length ? collectedMsgs.join('\n\n') : 'Aucune réponse';
           answers.push({ question: 'Réponses', answer: combined });
+
+          // Si l'utilisateur a explicitement envoyé 'done', envoyer une confirmation en DM
+          // et tenter de retirer les réactions existantes (✅ / ❌) sur un thread de verification déjà enregistré.
+          if (reason === 'done') {
+            try {
+              await dm.send("Votre vérification a bien été reçue et sera bientôt traitée.").catch(() => {});
+            } catch (e) { /* ignore */ }
+
+            // Si une vérification précédente existe dans le store pour ce membre, retirer les réactions sur le starter message
+            try {
+              const existing = store.verifications[member.id];
+              if (existing && existing.threadId && existing.channelId) {
+                let forumChan = null;
+                if (/^\d+$/.test(existing.channelId)) {
+                  forumChan = await client.channels.fetch(existing.channelId).catch(() => null);
+                }
+                if (!forumChan) {
+                  for (const [gid, g] of client.guilds.cache) {
+                    try {
+                      const ch = g.channels.cache.get(existing.channelId) || g.channels.cache.find(c => c.name === existing.channelId && c.type === ChannelType.GuildForum);
+                      if (ch) { forumChan = ch; break; }
+                    } catch (err) { /* ignore */ }
+                  }
+                }
+                if (forumChan && forumChan.threads) {
+                  const thread = await forumChan.threads.fetch(existing.threadId).catch(() => null);
+                  if (thread) {
+                    const starter = await thread.fetchStarterMessage().catch(() => null);
+                    if (starter && starter.reactions) {
+                      // Retirer toutes les réactions pour éviter un double-traitement visuel
+                      await starter.reactions.removeAll().catch(() => {});
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+              logger.warn('Impossible de retirer les réactions existantes: ' + (err && err.message ? err.message : String(err)));
+            }
+          }
         } else {
           // Mode ancien : poser une question par question
           await dm.send(`Bonjour ${member.user.username} ! Voici le message de vérification — merci d'y répondre.`).catch(() => {});
@@ -191,9 +234,11 @@ export function initVerification(client) {
         logger.warn('Impossible de récupérer le forum (FORUM_CHANNEL_ID incorrect ou le bot n\'est pas dans le serveur contenant ce channel)');
         return;
       }
-      const title = `${member.user.username}`;
-      const contentLines = [];
-      contentLines.push(`Nouvelle demande de vérification pour: **${member.user.tag}** (<@${member.id}>) Accepter : oui/non`);
+  const title = `${member.user.username}`;
+  const contentLines = [];
+  // Ping the notify role so staff are alerted to the new verification
+  const notifyMention = notifyRoleId ? `<@&${notifyRoleId}>` : '';
+  contentLines.push(`Nouvelle demande de vérification pour: **${member.user.tag}** (<@${member.id}>) Accepter : oui/non ${notifyMention}`);
       contentLines.push('---');
       for (const a of answers) contentLines.push(`**${a.question}**\n${a.answer}`);
       contentLines.push('\n\n*Meta: verification_member_id:' + member.id + '*');
@@ -210,7 +255,10 @@ export function initVerification(client) {
       try { await thread.setTopic(`verification:${member.id}`); } catch (err) {}
       try {
         const starter = await thread.fetchStarterMessage().catch(() => null);
-        if (starter) { await starter.react('✅').catch(() => {}); await starter.react('❌').catch(() => {}); }
+        // Intentionally do NOT add reactions to the starter message.
+        // Les réactions doivent être ajoutées manuellement par le staff pour éviter
+        // tout marquage automatique par le bot qui pourrait prêter à confusion.
+        // if (starter) { await starter.react('✅').catch(() => {}); await starter.react('❌').catch(() => {}); }
       } catch (err) {}
 
       // Persister la relation membre -> thread pour retrouver après redémarrage

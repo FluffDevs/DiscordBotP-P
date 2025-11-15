@@ -1,0 +1,40 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-15T00:07:38.128Z] [INFO] Chargée commande: ping
+[2025-11-15T00:07:38.143Z] [INFO] Chargée commande: say
+[2025-11-15T00:07:38.154Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-15T00:07:38.167Z] [INFO] Chargée slash-commande: ping
+[2025-11-15T00:07:38.184Z] [INFO] Chargée slash-commande: say
+[2025-11-15T00:07:39.453Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-15T00:09:10.051Z] [INFO] Chargée commande: ping
+[2025-11-15T00:09:10.068Z] [INFO] Chargée commande: say
+[2025-11-15T00:09:10.095Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-15T00:09:10.113Z] [INFO] Chargée slash-commande: ping
+[2025-11-15T00:09:10.148Z] [INFO] Chargée slash-commande: say
+[2025-11-15T00:09:11.594Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-15T00:11:09.906Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-15T00:11:10.460Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-15T00:11:10.798Z] [INFO]   OK — 3 commandes déployées
+[2025-11-15T00:11:11.813Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-15T00:11:12.026Z] [INFO]   OK — 3 commandes déployées
+[2025-11-15T00:11:30.612Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1423604664871419924 options=[]
+[2025-11-15T00:13:37.278Z] [INFO] Lancement vérification pour: electro__33
+[2025-11-15T00:14:31.757Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T00:14:32.051Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
+[2025-11-15T00:14:32.053Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T00:14:32.357Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
+[2025-11-15T00:23:45.677Z] [INFO] Chargée commande: ping
+[2025-11-15T00:23:45.695Z] [INFO] Chargée commande: say
+[2025-11-15T00:23:45.706Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-15T00:23:45.716Z] [INFO] Chargée slash-commande: ping
+[2025-11-15T00:23:45.730Z] [INFO] Chargée slash-commande: say
+[2025-11-15T00:23:47.261Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-15T00:25:52.837Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1424326028981047308 options=[]
+[2025-11-15T00:25:56.201Z] [INFO] Lancement vérification pour: electro__33
+[2025-11-15T00:26:31.527Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T00:26:31.906Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
+[2025-11-15T00:26:31.908Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T00:26:32.159Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
