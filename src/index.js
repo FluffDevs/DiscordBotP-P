@@ -11,7 +11,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { initVerification } from './verification.js';
-import logger from './logger.js';
+import logger, { commandInvocation } from './logger.js';
 
 const token = process.env.DISCORD_TOKEN;
 const prefix = process.env.PREFIX ?? '!';
@@ -83,6 +83,26 @@ client.once('clientReady', () => {
   logger.info(`${client.user.tag} connecté`);
 });
 
+// Log non-chat interactions (buttons, select menus, modals) centrally so we
+// capture any interaction even if handled elsewhere. Skip chat input commands
+// because they are logged in the dedicated handler below.
+client.on('interactionCreate', async (interaction) => {
+  try {
+    if (interaction.isChatInputCommand && interaction.isChatInputCommand()) return; // handled later
+    const kind = interaction.type ?? 'interaction';
+    const name = interaction.customId ?? interaction.commandName ?? kind;
+    commandInvocation({
+      command: name,
+      commandName: name,
+      userTag: interaction.user ? interaction.user.tag : 'unknown',
+      userId: interaction.user ? interaction.user.id : 'unknown',
+      guildId: interaction.guild ? interaction.guild.id : null,
+      channelId: interaction.channel ? interaction.channel.id : null,
+      options: interaction.options?.data ? interaction.options.data : undefined
+    });
+  } catch (e) { /* ignore */ }
+});
+
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
@@ -92,7 +112,16 @@ client.on('messageCreate', async (message) => {
   if (!command) return;
   // Log who invoked the prefix command
   try {
-    logger.info(`Prefix command invoked: ${cmd} by ${message.author.tag} (${message.author.id}) in guild=${message.guild ? message.guild.id : 'DM'} channel=${message.channel.id} args=${JSON.stringify(args)}`);
+    commandInvocation({
+      command: cmd,
+      userTag: message.author.tag,
+      userId: message.author.id,
+      guildId: message.guild ? message.guild.id : null,
+      guildName: message.guild ? message.guild.name : null,
+      channelId: message.channel.id,
+      channelName: message.channel.name || null,
+      args
+    });
   } catch (e) { /* ignore logging failure */ }
   try {
     await command.execute(message, args);
@@ -109,8 +138,18 @@ client.on('interactionCreate', async (interaction) => {
   if (!cmd) return;
   // Log who invoked the slash command
   try {
-    const opts = interaction.options?.data ? JSON.stringify(interaction.options.data) : '';
-    logger.info(`Slash command invoked: ${interaction.commandName} by ${interaction.user.tag} (${interaction.user.id}) in guild=${interaction.guild ? interaction.guild.id : 'DM'} channel=${interaction.channel ? interaction.channel.id : 'unknown'} options=${opts}`);
+    const opts = interaction.options?.data ? interaction.options.data : undefined;
+    commandInvocation({
+      commandName: interaction.commandName,
+      command: interaction.commandName,
+      userTag: interaction.user.tag,
+      userId: interaction.user.id,
+      guildId: interaction.guild ? interaction.guild.id : null,
+      guildName: interaction.guild ? interaction.guild.name : null,
+      channelId: interaction.channel ? interaction.channel.id : null,
+      channelName: interaction.channel ? interaction.channel.name : null,
+      options: opts
+    });
   } catch (e) { /* ignore logging failure */ }
   try {
     await cmd.execute(interaction);

@@ -44,6 +44,12 @@ if (fs.existsSync(commandsPath)) {
   }
 }
 
+// Show a short summary of commands that will be deployed
+try {
+  const names = commands.map(c => c.name || c[0] || '(unknown)');
+  logger.info(`Prêt à déployer ${commands.length} slash-commands: ${names.join(', ')}`);
+} catch (e) { /* ignore */ }
+
 const rest = new REST({ version: '10' }).setToken(token);
 
 /* Deployment modes:
@@ -83,3 +89,7 @@ try {
 } catch (err) {
   logger.error('Erreur lors du déploiement des commandes: ' + (err && err.message ? err.message : String(err)));
 }
+
+// Ensure the script exits even if some underlying HTTP agents keep the event loop alive.
+// This is intended for one-shot deploy scripts.
+try { process.exit(0); } catch (e) { /* ignore */ }

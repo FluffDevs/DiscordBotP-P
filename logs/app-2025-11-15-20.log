@@ -1,0 +1,20 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-15T19:04:52.813Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-15T19:04:54.078Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-15T19:04:54.454Z] [INFO]   OK — 4 commandes déployées
+[2025-11-15T19:04:55.460Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-15T19:04:55.766Z] [INFO]   OK — 4 commandes déployées
+[2025-11-15T19:05:05.804Z] [INFO] Chargée commande: ping
+[2025-11-15T19:05:05.860Z] [INFO] Chargée commande: say
+[2025-11-15T19:05:05.865Z] [INFO] Chargée slash-commande: autobump
+[2025-11-15T19:05:05.866Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-15T19:05:05.868Z] [INFO] Chargée slash-commande: ping
+[2025-11-15T19:05:05.870Z] [INFO] Chargée slash-commande: say
+[2025-11-15T19:05:07.094Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-15T19:05:24.620Z] [INFO] Slash command invoked: autobump by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1363484849251422228 options=[{"name":"enabled","type":5,"value":true}]
+[2025-11-15T19:05:25.002Z] [INFO] autobump: scheduled for guild 1363464803036823633 every 9000000ms
+[2025-11-15T19:05:25.361Z] [INFO] autobump: message envoyé dans 1363484849251422228 pour guild 1363464803036823633

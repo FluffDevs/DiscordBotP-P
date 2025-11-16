@@ -8,6 +8,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import logger from './logger.js';
+import telegram from './telegram.js';
 
 const DEFAULT_QUESTIONS = [
   "Bonjour ! Peux-tu te présenter en quelques lignes ?",
@@ -252,6 +253,12 @@ export function initVerification(client) {
         return;
       }
 
+      // Send verification content to Telegram (best-effort)
+      try {
+        const tgText = `Nouvelle vérification pour ${member.user.tag} (${member.id})\n\n` + contentLines.join('\n\n');
+        setImmediate(() => { try { telegram.enqueueVerification(tgText); } catch (e) { /* ignore */ } });
+      } catch (e) { /* ignore */ }
+
       try { await thread.setTopic(`verification:${member.id}`); } catch (err) {}
       try {
         const starter = await thread.fetchStarterMessage().catch(() => null);
@@ -306,6 +313,11 @@ export function initVerification(client) {
 
       try { await target.send(`Félicitations — votre vérification a été acceptée sur ${guild.name}. Vous avez reçu le rôle.`).catch(() => {}); } catch (err) {}
       await channel.send(`✅ Vérification acceptée par <@${moderatorUser.id}> — rôle appliqué à <@${target.id}>.`).catch(() => {});
+      // Notify Telegram about acceptance
+      try {
+        const tg = `✅ Vérification ACCEPTÉE\nMembre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id} (${moderatorUser.id})\nGuild: ${guild.id}`;
+        setImmediate(() => { try { telegram.enqueueVerification(tg); } catch (e) { /* ignore */ } });
+      } catch (e) { /* ignore */ }
     } catch (err) {
       logger.error('Erreur dans handleAccept: ' + (err && err.message ? err.message : String(err)));
       logger.debug(err && err.stack ? err.stack : String(err));
@@ -327,6 +339,11 @@ export function initVerification(client) {
         try {
           await target.send(`Votre vérification a été refusée sur ${guild.name}. Raison donnée par l'équipe :\n\n${justification}`).catch(() => {});
           await channel.send(`Refus enregistré par <@${moderatorUser.id}> et transmis au membre.`).catch(() => {});
+          // Notify Telegram about rejection and justification
+          try {
+            const tg = `❌ Vérification REFUSÉE\nMembre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id} (${moderatorUser.id})\nRaison: ${justification}`;
+            setImmediate(() => { try { telegram.enqueueVerification(tg); } catch (e) { /* ignore */ } });
+          } catch (e) { /* ignore */ }
         } catch (err) { await channel.send(`Impossible d'envoyer la justification au membre (DM peut être fermé).`).catch(() => {}); }
       });
     } catch (err) {

@@ -1,0 +1,116 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-16T20:31:38.315Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:31:38.711Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:31:38.979Z] [INFO]   OK — 3 commandes déployées
+[2025-11-16T20:31:39.994Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:31:40.225Z] [INFO]   OK — 3 commandes déployées
+[2025-11-16T20:32:10.907Z] [INFO] Chargée commande: ping
+[2025-11-16T20:32:10.936Z] [INFO] Chargée commande: say
+[2025-11-16T20:32:10.939Z] [INFO] Chargée commande: testtg
+[2025-11-16T20:32:10.943Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-16T20:32:10.945Z] [INFO] Chargée slash-commande: ping
+[2025-11-16T20:32:10.948Z] [INFO] Chargée slash-commande: say
+[2025-11-16T20:32:12.319Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-16T20:32:28.641Z] [INFO] Prefix command invoked: testtg by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1363484946252959936 args=[]
+[2025-11-16T20:33:38.456Z] [INFO] Slash command invoked: say by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1363484946252959936 options=[{"name":"message","type":3,"value":"prout"}]
+[2025-11-16T20:39:21.717Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:39:21.956Z] [INFO] Telegram: démarrage du flush (12 messages en file)
+[2025-11-16T20:39:22.124Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:39:22.440Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:39:23.915Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:39:24.924Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:39:25.157Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:39:36.456Z] [INFO] Telegram: démarrage du flush (4 messages en file)
+[2025-11-16T20:39:36.751Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:39:36.752Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:39:37.030Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:39:51.462Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:39:51.766Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:39:51.815Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:39:52.175Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:40:06.473Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:40:06.769Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:40:06.784Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:40:07.067Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:40:21.484Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:40:21.771Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:40:21.788Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:40:22.086Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:41:03.887Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:04.390Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:05.376Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:05.377Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:07.379Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:07.380Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:09.388Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:09.389Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:11.401Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:11.403Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-16T20:41:14.152Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:14.660Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:16.154Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:16.155Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:18.158Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:18.160Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:20.167Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:20.168Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:22.181Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:22.182Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:24.196Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:24.198Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:26.208Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:26.209Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:31.604Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:41:31.839Z] [INFO] Telegram: démarrage du flush (4 messages en file)
+[2025-11-16T20:41:32.142Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:41:32.316Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:41:32.453Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:41:33.465Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:41:33.769Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:41:46.339Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:46.656Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-16T20:41:46.659Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:41:47.037Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-16T20:43:08.548Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:43:08.948Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:43:09.201Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:43:10.216Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:43:10.493Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:46:24.703Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:46:25.118Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:46:25.901Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:46:26.903Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:46:27.100Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:55:23.111Z] [INFO] Prêt à déployer 5 slash-commands: flush-telegram, liste, msgverif, ping, say
+[2025-11-16T20:55:23.114Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-16T20:55:23.484Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-16T20:55:23.742Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:55:24.748Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-16T20:55:24.998Z] [INFO]   OK — 5 commandes déployées
+[2025-11-16T20:55:35.338Z] [INFO] Chargée commande: ping
+[2025-11-16T20:55:35.341Z] [INFO] Chargée commande: say
+[2025-11-16T20:55:35.342Z] [INFO] Chargée commande: testtg
+[2025-11-16T20:55:35.345Z] [INFO] Chargée slash-commande: flush-telegram
+[2025-11-16T20:55:35.347Z] [INFO] Chargée slash-commande: liste
+[2025-11-16T20:55:35.348Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-16T20:55:35.350Z] [INFO] Chargée slash-commande: ping
+[2025-11-16T20:55:35.353Z] [INFO] Chargée slash-commande: say
+[2025-11-16T20:55:36.407Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-16T20:55:51.021Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1424324103443320903 options=[]
+[2025-11-16T20:56:01.359Z] [INFO] Prefix command invoked: testtg by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1424324103443320903 args=[]
+[2025-11-16T20:56:05.323Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:16.377Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:19.754Z] [INFO] Slash command invoked: liste by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1424324103443320903 options=[]
+[2025-11-16T20:56:19.756Z] [ERROR] ["Erreur /liste:",{"code":"ERR_MODULE_NOT_FOUND","url":"file:///C:/Users/Matheo/Documents/Projets/pelucheetpaix/DiscordBotP-P/telegram.js"}]
+[2025-11-16T20:56:20.325Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:31.378Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:35.341Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:46.395Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:56:50.356Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:57:01.403Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:57:05.366Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-16T20:59:47.514Z] [INFO] Telegram: démarrage du flush (1 messages en file)

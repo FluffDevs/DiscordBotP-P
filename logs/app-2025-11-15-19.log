@@ -1,0 +1,17 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-15T18:46:46.649Z] [INFO] Chargée commande: ping
+[2025-11-15T18:46:46.673Z] [INFO] Chargée commande: say
+[2025-11-15T18:46:46.694Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-15T18:46:46.711Z] [INFO] Chargée slash-commande: ping
+[2025-11-15T18:46:46.737Z] [INFO] Chargée slash-commande: say
+[2025-11-15T18:46:47.895Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-15T18:46:58.093Z] [INFO] Slash command invoked: msgverif by electro__33 (403244927301058563) in guild=1363464803036823633 channel=1363484946252959936 options=[]
+[2025-11-15T18:48:10.172Z] [INFO] Lancement vérification pour: armin657
+[2025-11-15T18:53:47.012Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 441268166803587089 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T18:53:47.451Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=441268166803587089 guild=1363464803036823633 by=403244927301058563
+[2025-11-15T18:53:47.452Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 441268166803587089 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-15T18:53:47.850Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=441268166803587089 guild=1363464803036823633 by=403244927301058563
