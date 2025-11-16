@@ -89,29 +89,7 @@ export function commandInvocation(details) {
       const guild = details.guildId ? `${details.guildName ?? ''} (${details.guildId})` : 'DM';
       const channel = details.channelId ? `${details.channelName ?? ''} (${details.channelId})` : 'unknown';
       const cmd = details.commandName || details.command || 'unknown';
-      // Friendly format for options/args: prefer a name=value list when possible
-      let opts = '';
-      if (details.options) {
-        try {
-          if (Array.isArray(details.options)) {
-            const parts = details.options.map(o => {
-              // option objects from discord can be { name, type, value } or nested
-              if (o && typeof o === 'object') {
-                const v = Object.prototype.hasOwnProperty.call(o, 'value') ? o.value : (o.options ? JSON.stringify(o.options) : '');
-                return `${o.name}:${String(v)}`;
-              }
-              return String(o);
-            });
-            opts = parts.join(', ');
-          } else if (typeof details.options === 'object') {
-            opts = JSON.stringify(details.options);
-          } else {
-            opts = String(details.options);
-          }
-        } catch (e) { opts = JSON.stringify(details.options); }
-      } else if (details.args) {
-        try { opts = Array.isArray(details.args) ? details.args.join(' ') : String(details.args); } catch (e) { opts = JSON.stringify(details.args); }
-      }
+      const opts = details.options ? JSON.stringify(details.options) : (details.args ? JSON.stringify(details.args) : '');
       text = `CMD ${time}\nCommand: ${cmd}\nUser: ${user}\nGuild: ${guild}\nChannel: ${channel}\nOptions: ${opts}`;
     }
     // Write to local logs but prevent the write() from forwarding to Telegram again

@@ -117,9 +117,7 @@ client.on('messageCreate', async (message) => {
       userTag: message.author.tag,
       userId: message.author.id,
       guildId: message.guild ? message.guild.id : null,
-      guildName: message.guild ? message.guild.name : null,
       channelId: message.channel.id,
-      channelName: message.channel.name || null,
       args
     });
   } catch (e) { /* ignore logging failure */ }
@@ -145,9 +143,7 @@ client.on('interactionCreate', async (interaction) => {
       userTag: interaction.user.tag,
       userId: interaction.user.id,
       guildId: interaction.guild ? interaction.guild.id : null,
-      guildName: interaction.guild ? interaction.guild.name : null,
       channelId: interaction.channel ? interaction.channel.id : null,
-      channelName: interaction.channel ? interaction.channel.name : null,
       options: opts
     });
   } catch (e) { /* ignore logging failure */ }

@@ -89,7 +89,3 @@ try {
 } catch (err) {
   logger.error('Erreur lors du déploiement des commandes: ' + (err && err.message ? err.message : String(err)));
 }
-
-// Ensure the script exits even if some underlying HTTP agents keep the event loop alive.
-// This is intended for one-shot deploy scripts.
-try { process.exit(0); } catch (e) { /* ignore */ }
