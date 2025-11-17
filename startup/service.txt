@@ -1,0 +1,64 @@
+# Exemple d'installation d'un service systemd (Debian) pour lancer le projet avec `npm start`
+
+# 1) Exemple d'unité systemd
+# Remplacez /path/to/project par le chemin absolu du répertoire racine de votre projet
+# (celui qui contient package.json) — si `startup/` est au-dessus du projet, utilisez
+# le chemin du dossier projet réel.
+
+[Unit]
+Description=My Discord Bot (npm start)
+After=network.target
+
+[Service]
+Type=simple
+User=youruser               # changer pour l'utilisateur qui doit exécuter le bot
+Group=youruser
+WorkingDirectory=/path/to/project
+# Chargement d'un fichier d'environnement optionnel (format KEY=VAL)
+EnvironmentFile=/path/to/project/.env
+# Optionnel : définir NODE_ENV
+Environment=NODE_ENV=production
+# Commande de démarrage (npm doit être dans le PATH)
+ExecStart=/usr/bin/npm start
+# Le service utilisera le journal système ; si vous préférez un fichier de log, redirigez dans un wrapper.
+Restart=on-failure
+RestartSec=10
+# Limites (optionnel)
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+
+# 2) Commandes d'installation (à exécuter sur la machine Debian en tant que root ou sudo)
+# Copier le fichier d'unité dans /etc/systemd/system (exemple : nom du service mydiscordbot.service)
+# (à adapter si vous avez cloné le repo ailleurs)
+
+# sudo cp startup/service.txt /etc/systemd/system/mydiscordbot.service
+# sudo systemctl daemon-reload
+# sudo systemctl enable --now mydiscordbot.service
+# sudo systemctl status mydiscordbot.service
+# sudo journalctl -u mydiscordbot.service -f
+
+# 3) Vérifications / bonnes pratiques
+# - Assurez-vous que Node et npm sont installés globalement (ex: /usr/bin/node /usr/bin/npm).
+# - Exécutez `npm install --production` dans le dossier du projet avant d'activer le service.
+# - Remplacez `User`/`Group` par un utilisateur non privilégié prévu pour le bot.
+# - Si vous utilisez un fichier .env, gardez-le avec des droits restreints (chmod 600).
+# - Si votre start script est `node src/index.js` plutôt que `npm start`, remplacez ExecStart par
+#   /usr/bin/node /path/to/project/src/index.js
+
+# 4) Variante : exécuter le superviseur `startup/start-and-monitor.js`
+# Si vous préférez que systemd lance le superviseur (qui gère git fetch, restart/backoff et notifications Telegram),
+# utilisez :
+# ExecStart=/usr/bin/node /path/to/project/startup/start-and-monitor.js
+
+# 5) Exemple minimal de commandes réelles (remplacez /home/botuser/projects/DiscordBotP-P et botuser):
+# sudo cp startup/service.txt /etc/systemd/system/mydiscordbot.service
+# sudo sed -i 's#/path/to/project#/home/botuser/projects/DiscordBotP-P#g' /etc/systemd/system/mydiscordbot.service
+# sudo sed -i 's/youruser/botuser/g' /etc/systemd/system/mydiscordbot.service
+# cd /home/botuser/projects/DiscordBotP-P && npm install --production
+# sudo systemctl daemon-reload
+# sudo systemctl enable --now mydiscordbot.service
+# sudo journalctl -u mydiscordbot.service -f
+
+# Fin du fichier
