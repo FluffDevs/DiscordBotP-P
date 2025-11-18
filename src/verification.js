@@ -346,12 +346,23 @@ export function initVerification(client) {
       // Après acceptation : proposer l'attribution du rôle "artiste" si configuré
       if (artistRole) {
         try {
+          logger.debug(`ArtistRole configuré (${artistRole}) — question envoyée au modérateur ${moderatorUser && moderatorUser.id ? moderatorUser.id : moderatorUser} dans le channel ${channel && channel.id ? channel.id : 'unknown'}`);
           await channel.send(`<@${moderatorUser.id}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
           const filter = m => m.author.id === (moderatorUser.id ? moderatorUser.id : moderatorUser) && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
           // awaitMessages may throw on errors; we treat timeout as no-response
-          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch((e) => {
+            logger.warn('Erreur ou timeout lors de la collecte de la réponse pour rôle artiste: ' + (e && e.message ? e.message : String(e)));
+            return null;
+          });
           if (!collected || collected.size === 0) {
             await channel.send('Pas de réponse — attribution du rôle "artiste" considérée comme "non".').catch(() => {});
+            // Fallback: prévenir le modérateur en DM pour qu'il puisse attribuer manuellement si souhaité
+            try {
+              const modUser = await client.users.fetch(moderatorUser.id).catch(() => null);
+              if (modUser) {
+                await modUser.send(`Je n'ai pas reçu de réponse dans le fil ${channel.name ?? channel.id} concernant l'attribution du rôle "artiste" pour ${target.user ? target.user.tag : target.id}. Si vous souhaitez attribuer ce rôle, répondez ici par oui ou non.`).catch(() => {});
+              }
+            } catch (e) { /* ignore DM fallback errors */ }
           } else {
             const reply = collected.first().content.trim().toLowerCase();
             const giveArtist = /^(?:oui|o|yes|y)/i.test(reply);
