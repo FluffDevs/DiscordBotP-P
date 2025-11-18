@@ -105,6 +105,11 @@ export function initVerification(client) {
   // Role optionnel "artiste": peut être un ID, un nom, ou une mention <@&ID>
   const artistRoleRaw = getEnv('ARTIST_ROLE') ?? getEnv('ARTIST_ROLE_ID') ?? getEnv('ARTIST_ROLE_TAG');
   const artistRole = (typeof artistRoleRaw === 'string' ? artistRoleRaw.trim() : artistRoleRaw);
+  // Roles pour majeur / mineur (fonctions) — acceptez ID, nom ou mention <@&ID>
+  const majorRoleRaw = getEnv('MAJOR_ROLE') ?? getEnv('MAJEUR_ROLE') ?? getEnv('MAJOR_ROLE_ID');
+  const majorRole = (typeof majorRoleRaw === 'string' ? majorRoleRaw.trim() : majorRoleRaw);
+  const minorRoleRaw = getEnv('MINOR_ROLE') ?? getEnv('MINEUR_ROLE') ?? getEnv('MINOR_ROLE_ID');
+  const minorRole = (typeof minorRoleRaw === 'string' ? minorRoleRaw.trim() : minorRoleRaw);
   // Role ID to ping when a verification post is created (will notify staff)
   // Remplacez par l'ID souhaité ou mettez en variable d'environnement si nécessaire.
   const notifyRoleId = '1439047400193790152';
@@ -342,47 +347,116 @@ export function initVerification(client) {
         }
       }
 
-      // Après acceptation : proposer l'attribution du rôle "artiste" si configuré
-      if (artistRole) {
-        try {
-          const moderatorId = moderatorUser && moderatorUser.id ? moderatorUser.id : moderatorUser;
-          logger.debug(`ArtistRole configuré (${artistRole}) — question envoyée au modérateur ${moderatorId} dans le channel ${channel && channel.id ? channel.id : 'unknown'}`);
-          await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
-          const filter = m => m.author.id === moderatorId && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
-          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
-          if (!collected || collected.size === 0) {
-            await channel.send('Pas de réponse — pas d\'attribution du rôle "artiste".').catch(() => {});
-          } else {
-            const reply = collected.first().content.trim().toLowerCase();
-            const giveArtist = /^(?:oui|o|yes|y)/i.test(reply);
-            if (!giveArtist) {
-              await channel.send('OK — pas de rôle artiste.').catch(() => {});
-            } else {
-              // Résoudre le rôle artiste: accepter ID, mention <@&ID> ou nom
-              let r3 = null;
-              const m = artistRole.match(/^<@&(\d+)>$/);
-              if (m) r3 = guild.roles.cache.get(m[1]);
-              if (!r3 && /^\d+$/.test(artistRole)) r3 = guild.roles.cache.get(artistRole);
-              if (!r3) r3 = guild.roles.cache.find(x => x.name === artistRole);
-              if (!r3) {
-                await channel.send('Rôle "artiste" introuvable sur la guild (vérifiez ARTIST_ROLE dans .env).').catch(() => {});
-              } else {
-                logger.debug(`Tentative ajout du rôle artiste (${r3.id || r3.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorId})`);
-                const ok3 = await tryRoleOperation(() => target.roles.add(r3), `ajouter le rôle ${r3.id || r3.name} à ${target.id}`, channel);
-                if (ok3) {
-                  await channel.send(`Rôle "${r3.name}" attribué à <@${target.id}>.`).catch(() => {});
-                  logger.info(`Rôle artiste appliqué: role=${r3.id || r3.name} target=${target.id} guild=${guild.id} by=${moderatorId}`);
-                }
-              }
-            }
-          }
-        } catch (err) {
-          logger.warn('Erreur lors de la question d\'attribution du rôle artiste: ' + (err && err.message ? err.message : String(err)));
-        }
-      }
+      // artist prompt removed from here; it will be asked after confirmation and age-role flow
 
       try { await target.send(`Félicitations — votre vérification a été acceptée sur ${guild.name}. Vous avez reçu le rôle.`).catch(() => {}); } catch (err) {}
       await channel.send(`✅ Vérification acceptée par <@${moderatorUser.id}> — rôle appliqué à <@${target.id}>.`).catch(() => {});
+
+      // Après confirmation: demander majeur/mineur puis proposer le rôle artiste
+      try {
+        const moderatorId = moderatorUser && moderatorUser.id ? moderatorUser.id : moderatorUser;
+        const appliedRoles = [];
+        // If peluche role was applied earlier, record it for summary
+        try {
+          const pRole = guild.roles.cache.get(pelucheRole) || guild.roles.cache.find(x => x.name === pelucheRole);
+          if (pRole && target.roles.cache.has(pRole.id)) appliedRoles.push(pRole.name || pRole.id);
+        } catch (e) { /* ignore */ }
+
+        // 1) question majeur / mineur
+        if (majorRole || minorRole) {
+          try {
+            await channel.send(`<@${moderatorId}> Le membre est-il **majeur** ou **mineur** ? (majeur / mineur)`).catch(() => {});
+            const filterAge = m => m.author.id === moderatorId && /^(?:majeur|mineur|major|minor)$/i.test((m.content || '').trim());
+            const collectedAge = await channel.awaitMessages({ filter: filterAge, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+            if (collectedAge && collectedAge.size > 0) {
+              const ans = collectedAge.first().content.trim().toLowerCase();
+              if (/^majeur|^major/i.test(ans)) {
+                // give majorRole if configured
+                if (majorRole) {
+                  let rMajor = null;
+                  const mm = majorRole.match(/^<@&(\d+)>$/);
+                  if (mm) rMajor = guild.roles.cache.get(mm[1]);
+                  if (!rMajor && /^\d+$/.test(majorRole)) rMajor = guild.roles.cache.get(majorRole);
+                  if (!rMajor) rMajor = guild.roles.cache.find(x => x.name === majorRole);
+                  if (rMajor) {
+                    const okM = await tryRoleOperation(() => target.roles.add(rMajor), `ajouter le rôle ${rMajor.id || rMajor.name} à ${target.id}`, channel);
+                    if (okM) {
+                      appliedRoles.push(rMajor.name || rMajor.id);
+                      setImmediate(() => { try { telegram.enqueueVerification(`✅ Rôle majeur appliqué à ${target.user ? target.user.tag : target.id} (${target.id}) par ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id}`); } catch (e) {} });
+                      logger.info(`Rôle majeur appliqué: role=${rMajor.id || rMajor.name} target=${target.id} guild=${guild.id} by=${moderatorId}`);
+                    }
+                  } else {
+                    await channel.send('Rôle majeur introuvable sur la guild (vérifiez MAJOR_ROLE dans .env).').catch(() => {});
+                  }
+                }
+              } else if (/^mineur|^minor/i.test(ans)) {
+                if (minorRole) {
+                  let rMinor = null;
+                  const mm2 = minorRole.match(/^<@&(\d+)>$/);
+                  if (mm2) rMinor = guild.roles.cache.get(mm2[1]);
+                  if (!rMinor && /^\d+$/.test(minorRole)) rMinor = guild.roles.cache.get(minorRole);
+                  if (!rMinor) rMinor = guild.roles.cache.find(x => x.name === minorRole);
+                  if (rMinor) {
+                    const okm = await tryRoleOperation(() => target.roles.add(rMinor), `ajouter le rôle ${rMinor.id || rMinor.name} à ${target.id}`, channel);
+                    if (okm) {
+                      appliedRoles.push(rMinor.name || rMinor.id);
+                      setImmediate(() => { try { telegram.enqueueVerification(`✅ Rôle mineur appliqué à ${target.user ? target.user.tag : target.id} (${target.id}) par ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id}`); } catch (e) {} });
+                      logger.info(`Rôle mineur appliqué: role=${rMinor.id || rMinor.name} target=${target.id} guild=${guild.id} by=${moderatorId}`);
+                    }
+                  } else {
+                    await channel.send('Rôle mineur introuvable sur la guild (vérifiez MINOR_ROLE dans .env).').catch(() => {});
+                  }
+                }
+              }
+            } else {
+              await channel.send('Pas de réponse — rôle d\'âge non attribué.').catch(() => {});
+            }
+          } catch (e) { logger.warn('Erreur lors de la question majeur/mineur: ' + (e && e.message ? e.message : String(e))); }
+        }
+
+        // 2) question artiste (après avoir donné le rôle peluche)
+        if (artistRole) {
+          try {
+            await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
+            const filter = m => m.author.id === moderatorId && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
+            const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+            if (!collected || collected.size === 0) {
+              await channel.send('Pas de réponse — pas d\'attribution du rôle "artiste".').catch(() => {});
+            } else {
+              const reply = collected.first().content.trim().toLowerCase();
+              const giveArtist = /^(?:oui|o|yes|y)/i.test(reply);
+              if (!giveArtist) {
+                await channel.send('OK — pas de rôle artiste.').catch(() => {});
+              } else {
+                // Résoudre le rôle artiste: accepter ID, mention <@&ID> ou nom
+                let r3 = null;
+                const m = artistRole.match(/^<@&(\d+)>$/);
+                if (m) r3 = guild.roles.cache.get(m[1]);
+                if (!r3 && /^\d+$/.test(artistRole)) r3 = guild.roles.cache.get(artistRole);
+                if (!r3) r3 = guild.roles.cache.find(x => x.name === artistRole);
+                if (!r3) {
+                  await channel.send('Rôle "artiste" introuvable sur la guild (vérifiez ARTIST_ROLE dans .env).').catch(() => {});
+                } else {
+                  const ok3 = await tryRoleOperation(() => target.roles.add(r3), `ajouter le rôle ${r3.id || r3.name} à ${target.id}`, channel);
+                  if (ok3) {
+                    appliedRoles.push(r3.name || r3.id);
+                    await channel.send(`Rôle "${r3.name}" attribué à <@${target.id}>.`).catch(() => {});
+                    logger.info(`Rôle artiste appliqué: role=${r3.id || r3.name} target=${target.id} guild=${guild.id} by=${moderatorId}`);
+                    setImmediate(() => { try { telegram.enqueueVerification(`✅ Rôle artiste appliqué à ${target.user ? target.user.tag : target.id} (${target.id}) par ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id}`); } catch (e) {} });
+                  }
+                }
+              }
+            }
+          } catch (err) { logger.warn('Erreur lors de la question d\'attribution du rôle artiste: ' + (err && err.message ? err.message : String(err))); }
+        }
+
+        // Final summary
+        try {
+          const summary = appliedRoles.length ? appliedRoles.join(', ') : 'aucun rôle supplémentaire';
+          await channel.send(`Vérification terminée — rôles appliqués pour <@${target.id}> : ${summary}`).catch(() => {});
+          setImmediate(() => { try { telegram.enqueueVerification(`✅ Vérification terminée pour ${target.user ? target.user.tag : target.id} (${target.id}). Rôles appliqués: ${summary}`); } catch (e) {} });
+        } catch (e) { /* ignore */ }
+      } catch (e) { /* ignore */ }
       // Mark as accepted in store
       try {
         const existing2 = store.verifications[targetId] || {};
