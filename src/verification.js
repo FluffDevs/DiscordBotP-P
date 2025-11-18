@@ -68,8 +68,25 @@ export function initVerification(client) {
         // Non-transient or last attempt: log and notify channel if provided
         logger.error(`Echec définitif de ${contextMsg}: ${msg}`);
         if (channel) {
+          // Try to provide additional diagnostic info: bot's highest role and target role position (if role id present in contextMsg)
+          let extra = '';
           try {
-            await channel.send(`⚠️ Erreur: impossible de ${contextMsg}. Détails: ${msg}. Vérifiez que le bot a la permission Manage Roles, que son rôle est au-dessus du rôle ciblé et réessayez.`).catch(() => {});
+            const guild = channel.guild || (channel.thread ? channel.thread.guild : null) || null;
+            if (guild && client && client.user) {
+              const botMember = await guild.members.fetch(client.user.id).catch(() => null);
+              if (botMember && botMember.roles && botMember.roles.highest) {
+                extra += `\nBot highest role: ${botMember.roles.highest.name} (position ${botMember.roles.highest.position})`;
+              }
+              const idMatch = String(contextMsg).match(/(\d{16,})/);
+              if (idMatch) {
+                const roleId = idMatch[1];
+                const targetRole = guild.roles.cache.get(roleId);
+                if (targetRole) extra += `\nTarget role: ${targetRole.name} (position ${targetRole.position})`;
+              }
+            }
+          } catch (e) { /* ignore diagnostic helpers */ }
+          try {
+            await channel.send(`⚠️ Erreur: impossible de ${contextMsg}. Détails: ${msg}. Vérifiez que le bot a la permission Manage Roles, que son rôle est au-dessus du rôle ciblé et réessayez.${extra}`).catch(() => {});
           } catch (e) { /* ignore */ }
         }
         return false;
@@ -85,6 +102,9 @@ export function initVerification(client) {
   const pelucheRole = (typeof pelucheRoleRaw === 'string' ? pelucheRoleRaw.trim() : pelucheRoleRaw);
   const verifierRoleRaw = getEnv('VERIFIER_ROLE'); // optional role allowed to validate
   const verifierRole = (typeof verifierRoleRaw === 'string' ? verifierRoleRaw.trim() : verifierRoleRaw);
+  // Role optionnel "artiste": peut être un ID, un nom, ou une mention <@&ID>
+  const artistRoleRaw = getEnv('ARTIST_ROLE') ?? getEnv('ARTIST_ROLE_ID') ?? getEnv('ARTIST_ROLE_TAG');
+  const artistRole = (typeof artistRoleRaw === 'string' ? artistRoleRaw.trim() : artistRoleRaw);
   // Role ID to ping when a verification post is created (will notify staff)
   // Remplacez par l'ID souhaité ou mettez en variable d'environnement si nécessaire.
   const notifyRoleId = '1439047400193790152';
@@ -284,6 +304,18 @@ export function initVerification(client) {
   // Helper: accepter une vérification (utilisé par réactions et messages 'oui')
   async function handleAccept(guild, channel, moderatorUser, targetId) {
     try {
+      // Prevent double-processing: check persisted store for status
+      try {
+        const existing = store.verifications[targetId] || {};
+        if (existing.status === 'processing' || existing.status === 'accepted') {
+          await channel.send(`Cette vérification est déjà en cours ou a déjà été traitée.`).catch(() => {});
+          return;
+        }
+        // mark as processing early to avoid race between reaction and message handlers
+        store.verifications[targetId] = Object.assign({}, existing, { status: 'processing', updatedAt: Date.now() });
+        saveStore();
+      } catch (e) { /* ignore store errors */ }
+
       const target = await guild.members.fetch(targetId).catch(() => null);
       if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
 
@@ -311,8 +343,53 @@ export function initVerification(client) {
         }
       }
 
+      // Après acceptation : proposer l'attribution du rôle "artiste" si configuré
+      if (artistRole) {
+        try {
+          await channel.send(`<@${moderatorUser.id}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
+          const filter = m => m.author.id === (moderatorUser.id ? moderatorUser.id : moderatorUser) && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
+          // awaitMessages may throw on errors; we treat timeout as no-response
+          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+          if (!collected || collected.size === 0) {
+            await channel.send('Pas de réponse — attribution du rôle "artiste" considérée comme "non".').catch(() => {});
+          } else {
+            const reply = collected.first().content.trim().toLowerCase();
+            const giveArtist = /^(?:oui|o|yes|y)/i.test(reply);
+            if (!giveArtist) {
+              await channel.send('Attribution du rôle "artiste" annulée.').catch(() => {});
+            } else {
+              // Résoudre le rôle artiste: accepter ID, mention <@&ID> ou nom
+              let r3 = null;
+              // mention format <@&ID>
+              const m = artistRole.match(/^<@&(\d+)>$/);
+              if (m) r3 = guild.roles.cache.get(m[1]);
+              if (!r3 && /^\d+$/.test(artistRole)) r3 = guild.roles.cache.get(artistRole);
+              if (!r3) r3 = guild.roles.cache.find(x => x.name === artistRole);
+              if (!r3) {
+                await channel.send('Rôle "artiste" introuvable sur la guild (vérifiez ARTIST_ROLE dans .env).').catch(() => {});
+              } else {
+                logger.debug(`Tentative ajout du rôle artiste (${r3.id || r3.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorUser.id})`);
+                const ok3 = await tryRoleOperation(() => target.roles.add(r3), `ajouter le rôle ${r3.id || r3.name} à ${target.id}`, channel);
+                if (ok3) {
+                  await channel.send(`Rôle "${r3.name}" attribué à <@${target.id}>.`).catch(() => {});
+                  logger.info(`Rôle artiste appliqué: role=${r3.id || r3.name} target=${target.id} guild=${guild.id} by=${moderatorUser.id}`);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          logger.warn('Erreur lors de la question d\'attribution du rôle artiste: ' + (err && err.message ? err.message : String(err)));
+        }
+      }
+
       try { await target.send(`Félicitations — votre vérification a été acceptée sur ${guild.name}. Vous avez reçu le rôle.`).catch(() => {}); } catch (err) {}
       await channel.send(`✅ Vérification acceptée par <@${moderatorUser.id}> — rôle appliqué à <@${target.id}>.`).catch(() => {});
+      // Mark as accepted in store
+      try {
+        const existing2 = store.verifications[targetId] || {};
+        store.verifications[targetId] = Object.assign({}, existing2, { status: 'accepted', acceptedAt: Date.now() });
+        saveStore();
+      } catch (e) { /* ignore */ }
       // Notify Telegram about acceptance
       try {
         const tg = `✅ Vérification ACCEPTÉE\nMembre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id} (${moderatorUser.id})\nGuild: ${guild.id}`;

@@ -1,0 +1,204 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-18T07:28:15.479Z] [INFO] Chargée commande: ping
+[2025-11-18T07:28:15.499Z] [INFO] Chargée commande: say
+[2025-11-18T07:28:15.517Z] [INFO] Chargée commande: testtg
+[2025-11-18T07:28:15.535Z] [INFO] Chargée slash-commande: flush-telegram
+[2025-11-18T07:28:15.555Z] [INFO] Chargée slash-commande: liste
+[2025-11-18T07:28:15.574Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-18T07:28:15.591Z] [INFO] Chargée slash-commande: ping
+[2025-11-18T07:28:15.613Z] [INFO] Chargée slash-commande: say
+[2025-11-18T07:28:15.638Z] [INFO] Chargée slash-commande: testtg
+[2025-11-18T07:28:16.516Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-18T07:28:46.562Z] [INFO] CMD 2025-11-18T07:28:46.562Z
+Command: liste
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1424326028981047308)
+Options: []
+[2025-11-18T07:28:50.781Z] [INFO] CMD 2025-11-18T07:28:50.781Z
+Command: liste
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1424326028981047308)
+Options: []
+[2025-11-18T07:28:56.278Z] [INFO] CMD 2025-11-18T07:28:56.277Z
+Command: msgverif
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1424326028981047308)
+Options: []
+[2025-11-18T07:29:01.050Z] [INFO] CMD 2025-11-18T07:29:01.050Z
+Command: liste
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1424326028981047308)
+Options: []
+[2025-11-18T07:30:41.659Z] [INFO] Chargée commande: ping
+[2025-11-18T07:30:41.663Z] [INFO] Chargée commande: say
+[2025-11-18T07:30:41.664Z] [INFO] Chargée commande: testtg
+[2025-11-18T07:30:41.666Z] [INFO] Chargée slash-commande: flush-telegram
+[2025-11-18T07:30:41.669Z] [INFO] Chargée slash-commande: liste
+[2025-11-18T07:30:41.671Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-18T07:30:41.672Z] [INFO] Chargée slash-commande: ping
+[2025-11-18T07:30:41.675Z] [INFO] Chargée slash-commande: say
+[2025-11-18T07:30:41.677Z] [INFO] Chargée slash-commande: testtg
+[2025-11-18T07:30:42.546Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-18T07:30:56.628Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:30:56.722Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:30:57.108Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:30:57.185Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:31:10.133Z] [INFO] Chargée commande: ping
+[2025-11-18T07:31:10.136Z] [INFO] Chargée commande: say
+[2025-11-18T07:31:10.137Z] [INFO] Chargée commande: testtg
+[2025-11-18T07:31:10.140Z] [INFO] Chargée slash-commande: flush-telegram
+[2025-11-18T07:31:10.142Z] [INFO] Chargée slash-commande: liste
+[2025-11-18T07:31:10.144Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-18T07:31:10.146Z] [INFO] Chargée slash-commande: ping
+[2025-11-18T07:31:10.148Z] [INFO] Chargée slash-commande: say
+[2025-11-18T07:31:10.150Z] [INFO] Chargée slash-commande: testtg
+[2025-11-18T07:31:11.026Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-18T07:31:25.113Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:31:25.204Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:31:25.454Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:31:25.548Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:31:36.581Z] [INFO] CMD 2025-11-18T07:31:36.581Z
+Command: request_verif
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1424326028981047308)
+Options: 
+[2025-11-18T07:31:36.836Z] [INFO] Lancement vérification pour: electro__33
+[2025-11-18T07:31:40.117Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-18T07:31:40.394Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:32:10.140Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:32:10.403Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:32:26.871Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:32:27.096Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:32:27.097Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:32:27.293Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:27.294Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:33.756Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:32:33.759Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:32:33.964Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1396838062612414565 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:33.965Z] [ERROR] Echec définitif de ajouter le rôle 1396838062612414565 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:34.161Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=403244927301058563 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:32:34.162Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 403244927301058563 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:32:34.363Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:34.363Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 403244927301058563: Missing Permissions
+[2025-11-18T07:32:40.166Z] [INFO] Telegram: démarrage du flush (14 messages en file)
+[2025-11-18T07:32:40.461Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:34:04.124Z] [INFO] CMD 2025-11-18T07:34:04.124Z
+Command: msgverif
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1423604664871419924)
+Options: []
+[2025-11-18T07:34:06.498Z] [INFO] CMD 2025-11-18T07:34:06.498Z
+Command: request_verif
+User: electro___33 (1429449166722961479)
+Guild:  (1363464803036823633)
+Channel:  (1423604664871419924)
+Options: 
+[2025-11-18T07:34:06.720Z] [INFO] Lancement vérification pour: electro___33
+[2025-11-18T07:34:10.207Z] [INFO] Telegram: démarrage du flush (3 messages en file)
+[2025-11-18T07:34:10.471Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:34:40.224Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:34:40.487Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:34:45.947Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:34:46.214Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:34:46.215Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:34:46.440Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:46.441Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:52.447Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:34:52.450Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:34:52.699Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:52.700Z] [ERROR] Echec définitif de ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:52.941Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:34:52.942Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:34:53.164Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:53.165Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:34:55.034Z] [INFO] Telegram: démarrage du flush (14 messages en file)
+[2025-11-18T07:34:55.235Z] [INFO] Telegram: démarrage du flush (14 messages en file)
+[2025-11-18T07:34:55.297Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:34:55.515Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:35:30.600Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:35:30.973Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:35:30.974Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:35:31.196Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:35:31.196Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:35:40.269Z] [INFO] Telegram: démarrage du flush (5 messages en file)
+[2025-11-18T07:35:40.551Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:36:29.244Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:36:29.245Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:36:29.247Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:36:29.450Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:29.451Z] [ERROR] Echec définitif de ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:29.644Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:29.645Z] [ERROR] Echec définitif de ajouter le rôle 1396838062612414565 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:29.837Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:36:29.838Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:36:30.018Z] [WARN] Tentative 1 échouée pour ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:30.019Z] [ERROR] Echec définitif de ajouter le rôle 1363472160110284870 à 1429449166722961479: Missing Permissions
+[2025-11-18T07:36:40.289Z] [INFO] Telegram: démarrage du flush (13 messages en file)
+[2025-11-18T07:36:40.585Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:37:40.301Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:37:40.613Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:38:13.446Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:38:13.449Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:38:14.004Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:38:14.005Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:38:14.090Z] [INFO] Rôle artiste appliqué: role=1396838062612414565 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:38:14.229Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:38:25.302Z] [INFO] Telegram: démarrage du flush (7 messages en file)
+[2025-11-18T07:38:25.610Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:38:55.303Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:38:55.617Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:42:07.398Z] [INFO] Chargée commande: ping
+[2025-11-18T07:42:07.401Z] [INFO] Chargée commande: say
+[2025-11-18T07:42:07.403Z] [INFO] Chargée commande: testtg
+[2025-11-18T07:42:07.405Z] [INFO] Chargée slash-commande: flush-telegram
+[2025-11-18T07:42:07.408Z] [INFO] Chargée slash-commande: liste
+[2025-11-18T07:42:07.410Z] [INFO] Chargée slash-commande: msgverif
+[2025-11-18T07:42:07.412Z] [INFO] Chargée slash-commande: ping
+[2025-11-18T07:42:07.415Z] [INFO] Chargée slash-commande: say
+[2025-11-18T07:42:07.417Z] [INFO] Chargée slash-commande: testtg
+[2025-11-18T07:42:08.773Z] [INFO] Peluche Bot#6916 connecté
+[2025-11-18T07:42:22.376Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:42:22.470Z] [INFO] Telegram: démarrage du flush (10 messages en file)
+[2025-11-18T07:42:23.103Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:42:23.119Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:42:31.980Z] [INFO] CMD 2025-11-18T07:42:31.980Z
+Command: msgverif
+User: electro__33 (403244927301058563)
+Guild:  (1363464803036823633)
+Channel:  (1423604664871419924)
+Options: []
+[2025-11-18T07:42:37.381Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:42:37.658Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:42:37.890Z] [INFO] CMD 2025-11-18T07:42:37.890Z
+Command: request_verif
+User: electro___33 (1429449166722961479)
+Guild:  (1363464803036823633)
+Channel:  (1423604664871419924)
+Options: 
+[2025-11-18T07:42:38.140Z] [INFO] Lancement vérification pour: electro___33
+[2025-11-18T07:42:46.992Z] [INFO] Telegram: démarrage du flush (2 messages en file)
+[2025-11-18T07:42:47.257Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:43:37.405Z] [INFO] Telegram: démarrage du flush (1 messages en file)
+[2025-11-18T07:43:37.669Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T07:43:43.235Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:43:43.538Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:43:43.540Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:43:43.867Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:43:46.886Z] [DEBUG] Tentative ajout du rôle artiste (1396838062612414565) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:43:46.888Z] [DEBUG] Tentative suppression du rôle non-vérifié (1409253783200071701) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:43:47.308Z] [INFO] Rôle non-vérifié retiré: role=1409253783200071701 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:43:47.309Z] [DEBUG] Tentative ajout du rôle peluche (1363472160110284870) pour membre 1429449166722961479 sur guild 1363464803036823633 (par 403244927301058563)
+[2025-11-18T07:43:47.437Z] [INFO] Rôle artiste appliqué: role=1396838062612414565 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:43:47.487Z] [INFO] Rôle peluche appliqué: role=1363472160110284870 target=1429449166722961479 guild=1363464803036823633 by=403244927301058563
+[2025-11-18T07:43:51.004Z] [INFO] Telegram: démarrage du flush (11 messages en file)
+[2025-11-18T07:43:51.280Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
