@@ -345,32 +345,21 @@ export function initVerification(client) {
       // Après acceptation : proposer l'attribution du rôle "artiste" si configuré
       if (artistRole) {
         try {
-          logger.debug(`ArtistRole configuré (${artistRole}) — question envoyée au modérateur ${moderatorUser && moderatorUser.id ? moderatorUser.id : moderatorUser} dans le channel ${channel && channel.id ? channel.id : 'unknown'}`);
-          await channel.send(`<@${moderatorUser.id}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
-          const filter = m => m.author.id === (moderatorUser.id ? moderatorUser.id : moderatorUser) && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
-          // awaitMessages may throw on errors; we treat timeout as no-response
-          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch((e) => {
-            logger.warn('Erreur ou timeout lors de la collecte de la réponse pour rôle artiste: ' + (e && e.message ? e.message : String(e)));
-            return null;
-          });
+          const moderatorId = moderatorUser && moderatorUser.id ? moderatorUser.id : moderatorUser;
+          logger.debug(`ArtistRole configuré (${artistRole}) — question envoyée au modérateur ${moderatorId} dans le channel ${channel && channel.id ? channel.id : 'unknown'}`);
+          await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
+          const filter = m => m.author.id === moderatorId && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
+          const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
           if (!collected || collected.size === 0) {
-            await channel.send('Pas de réponse — attribution du rôle "artiste" considérée comme "non".').catch(() => {});
-            // Fallback: prévenir le modérateur en DM pour qu'il puisse attribuer manuellement si souhaité
-            try {
-              const modUser = await client.users.fetch(moderatorUser.id).catch(() => null);
-              if (modUser) {
-                await modUser.send(`Je n'ai pas reçu de réponse dans le fil ${channel.name ?? channel.id} concernant l'attribution du rôle "artiste" pour ${target.user ? target.user.tag : target.id}. Si vous souhaitez attribuer ce rôle, répondez ici par oui ou non.`).catch(() => {});
-              }
-            } catch (e) { /* ignore DM fallback errors */ }
+            await channel.send('Pas de réponse — pas d\'attribution du rôle "artiste".').catch(() => {});
           } else {
             const reply = collected.first().content.trim().toLowerCase();
             const giveArtist = /^(?:oui|o|yes|y)/i.test(reply);
             if (!giveArtist) {
-              await channel.send('Attribution du rôle "artiste" annulée.').catch(() => {});
+              await channel.send('OK — pas de rôle artiste.').catch(() => {});
             } else {
               // Résoudre le rôle artiste: accepter ID, mention <@&ID> ou nom
               let r3 = null;
-              // mention format <@&ID>
               const m = artistRole.match(/^<@&(\d+)>$/);
               if (m) r3 = guild.roles.cache.get(m[1]);
               if (!r3 && /^\d+$/.test(artistRole)) r3 = guild.roles.cache.get(artistRole);
@@ -378,11 +367,11 @@ export function initVerification(client) {
               if (!r3) {
                 await channel.send('Rôle "artiste" introuvable sur la guild (vérifiez ARTIST_ROLE dans .env).').catch(() => {});
               } else {
-                logger.debug(`Tentative ajout du rôle artiste (${r3.id || r3.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorUser.id})`);
+                logger.debug(`Tentative ajout du rôle artiste (${r3.id || r3.name}) pour membre ${target.id} sur guild ${guild.id} (par ${moderatorId})`);
                 const ok3 = await tryRoleOperation(() => target.roles.add(r3), `ajouter le rôle ${r3.id || r3.name} à ${target.id}`, channel);
                 if (ok3) {
                   await channel.send(`Rôle "${r3.name}" attribué à <@${target.id}>.`).catch(() => {});
-                  logger.info(`Rôle artiste appliqué: role=${r3.id || r3.name} target=${target.id} guild=${guild.id} by=${moderatorUser.id}`);
+                  logger.info(`Rôle artiste appliqué: role=${r3.id || r3.name} target=${target.id} guild=${guild.id} by=${moderatorId}`);
                 }
               }
             }
