@@ -281,11 +281,10 @@ export function initVerification(client) {
 
       try { await thread.setTopic(`verification:${member.id}`); } catch (err) {}
       try {
-        const starter = await thread.fetchStarterMessage().catch(() => null);
-        // Intentionally do NOT add reactions to the starter message.
-        // Les réactions doivent être ajoutées manuellement par le staff pour éviter
-        // tout marquage automatique par le bot qui pourrait prêter à confusion.
-        // if (starter) { await starter.react('✅').catch(() => {}); await starter.react('❌').catch(() => {}); }
+        // Envoyer un message dans le fil pour solliciter la validation du staff (pas de réactions automatiques)
+        const question = `${notifyMention} Gardiens de la porte — validez-vous cette vérification ? (oui / non)`;
+        // Utiliser thread.send pour poster dans le thread
+        await thread.send({ content: question }).catch(() => {});
       } catch (err) {}
 
       // Persister la relation membre -> thread pour retrouver après redémarrage
