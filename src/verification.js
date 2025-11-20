@@ -288,13 +288,16 @@ export function initVerification(client) {
       try {
         // Envoyer un message dans le fil pour solliciter la validation du staff (pas de réactions automatiques)
         const question = `${notifyMention} Gardiens de la porte — validez-vous cette vérification ? (oui / non)`;
-        // Utiliser thread.send pour poster dans le thread
-        await thread.send({ content: question }).catch(() => {});
+        // Utiliser thread.send pour poster dans le thread et conserver l'ID du message de validation
+        var validationMsg = null;
+        try {
+          validationMsg = await thread.send({ content: question });
+        } catch (e) { /* ignore send errors */ }
       } catch (err) {}
 
       // Persister la relation membre -> thread pour retrouver après redémarrage
       try {
-        store.verifications[member.id] = { threadId: thread.id, channelId: forumChannelId, createdAt: Date.now() };
+        store.verifications[member.id] = { threadId: thread.id, channelId: forumChannelId, createdAt: Date.now(), awaitingValidation: true, validationMessageId: validationMsg ? validationMsg.id : undefined };
         saveStore();
       } catch (err) {
         logger.warn('Impossible de persister la vérification: ' + (err && err.message ? err.message : String(err)));
@@ -316,7 +319,9 @@ export function initVerification(client) {
           return;
         }
         // mark as processing early to avoid race between reaction and message handlers
-        store.verifications[targetId] = Object.assign({}, existing, { status: 'processing', updatedAt: Date.now() });
+        // also clear awaitingValidation so subsequent messages in the thread (age/artiste prompts)
+        // are not interpreted as a fresh global accept/reject
+        store.verifications[targetId] = Object.assign({}, existing, { status: 'processing', updatedAt: Date.now(), awaitingValidation: false });
         saveStore();
       } catch (e) { /* ignore store errors */ }
 
@@ -478,6 +483,13 @@ export function initVerification(client) {
   // Helper: refuser une vérification (utilisé par réactions et messages 'non')
   async function handleReject(guild, channel, moderatorUser, targetId) {
     try {
+      // Ensure we don't re-trigger validation handlers for subsequent messages
+      try {
+        const existing = store.verifications[targetId] || {};
+        store.verifications[targetId] = Object.assign({}, existing, { awaitingValidation: false });
+        saveStore();
+      } catch (e) { /* ignore store errors */ }
+
       const target = await guild.members.fetch(targetId).catch(() => null);
       if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
 
@@ -549,6 +561,12 @@ export function initVerification(client) {
       const target = await guild.members.fetch(targetId).catch(() => null);
       if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
 
+      // Only consider reactions for initial validation if this thread is still awaiting validation
+      try {
+        const ver = store.verifications[targetId] || {};
+        if (!ver.awaitingValidation) return; // ignore reactions once initial validation window is closed
+      } catch (e) { /* ignore store access errors */ }
+
       if (emoji === '✅') {
         await handleAccept(guild, channel, user, targetId);
       } else if (emoji === '❌') {
@@ -599,6 +617,12 @@ export function initVerification(client) {
         if (mention) targetId = mention.id;
       }
       if (!targetId) return; // nothing to do
+
+      // Only handle quick accept/reject messages if the verification is still awaiting initial validation
+      try {
+        const ver = store.verifications[targetId] || {};
+        if (!ver.awaitingValidation) return;
+      } catch (e) { /* ignore store access errors */ }
 
       const text = (msg.content || '').toLowerCase().trim();
       const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved)\b/;
