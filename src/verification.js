@@ -112,7 +112,7 @@ export function initVerification(client) {
   const minorRole = (typeof minorRoleRaw === 'string' ? minorRoleRaw.trim() : minorRoleRaw);
   // Role ID to ping when a verification post is created (will notify staff)
   // Remplacez par l'ID souhaité ou mettez en variable d'environnement si nécessaire.
-  const notifyRoleId = '1439047400193790152';
+  const notifyRoleId = '1440249794965541014';
   const questionsEnv = getEnv('QUESTIONS');
   // VERIF_MESSAGE_MD can be used to define a full markdown message sent to the user.
   // For convenience, QUESTIONS can now be used as an alias for VERIF_MESSAGE_MD (markdown string),
