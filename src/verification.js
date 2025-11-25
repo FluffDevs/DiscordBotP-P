@@ -159,11 +159,11 @@ export function initVerification(client) {
         if (verifMessageMd) {
           // Envoyer le message markdown configuré
           await dm.send({ content: verifMessageMd }).catch(() => {});
-          await dm.send("Merci : réponds à ces questions dans ce DM. Tape `done` quand tu as fini (ou attends 5 minutes).\nRéponds en un ou plusieurs messages.").catch(() => {});
+          await dm.send("Merci : réponds à ces questions dans ce DM. Tape `done` quand tu as fini (ou attends 10 minutes).\nRéponds en un ou plusieurs messages.").catch(() => {});
 
           // Collecter les messages jusqu'à `done` ou timeout
           const collectedMsgs = [];
-          const collector = dm.createMessageCollector({ filter: m => m.author.id === member.id, time: 5 * 60 * 1000 });
+          const collector = dm.createMessageCollector({ filter: m => m.author.id === member.id, time: 10 * 60 * 1000 });
           collector.on('collect', m => {
             if (m.content && m.content.toLowerCase().trim() === 'done') {
               collector.stop('done');
@@ -222,7 +222,7 @@ export function initVerification(client) {
           for (const q of questions) {
             await dm.send(q).catch(() => {});
             try {
-              const collected = await dm.awaitMessages({ filter: m => m.author.id === member.id, max: 1, time: 5 * 60 * 1000, errors: ['time'] });
+              const collected = await dm.awaitMessages({ filter: m => m.author.id === member.id, max: 1, time: 10 * 60 * 1000, errors: ['time'] });
               const reply = collected.first();
               answers.push({ question: q, answer: reply ? reply.content : 'Aucune réponse' });
             } catch (err) {
@@ -372,7 +372,7 @@ export function initVerification(client) {
           try {
             await channel.send(`<@${moderatorId}> Le membre est-il **majeur** ou **mineur** ? (majeur / mineur)`).catch(() => {});
             const filterAge = m => m.author.id === moderatorId && /^(?:majeur|mineur|major|minor)$/i.test((m.content || '').trim());
-            const collectedAge = await channel.awaitMessages({ filter: filterAge, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+            const collectedAge = await channel.awaitMessages({ filter: filterAge, max: 1, time: 10 * 60 * 1000 }).catch(() => null);
             if (collectedAge && collectedAge.size > 0) {
               const ans = collectedAge.first().content.trim().toLowerCase();
               if (/^majeur|^major/i.test(ans)) {
@@ -424,7 +424,7 @@ export function initVerification(client) {
           try {
             await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
             const filter = m => m.author.id === moderatorId && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
-            const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
+            const collected = await channel.awaitMessages({ filter, max: 1, time: 10 * 60 * 1000 }).catch(() => null);
             if (!collected || collected.size === 0) {
               await channel.send('Pas de réponse — pas d\'attribution du rôle "artiste".').catch(() => {});
             } else {
