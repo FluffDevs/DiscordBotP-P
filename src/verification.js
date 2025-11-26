@@ -159,7 +159,13 @@ export function initVerification(client) {
         // Si un message markdown complet est défini dans .env, on l'envoie et on collecte les réponses libres
         if (verifMessageMd) {
           // Envoyer le message markdown configuré (utiliser envoi segmenté si nécessaire)
-          await sendLong(dm, verifMessageMd).catch(() => {});
+          try {
+            logger.debug && logger.debug(`Envoi du message de vérification en DM length=${verifMessageMd.length}`);
+            const res = await sendLong(dm, verifMessageMd).catch((e) => { logger.warn('sendLong DM a échoué: ' + (e && e.message ? e.message : String(e))); return null; });
+            if (res && res.id) logger.info(`Message de vérification DM envoyé (messageId=${res.id})`);
+          } catch (e) {
+            logger.warn('Erreur lors de l\'envoi du message markdown en DM: ' + (e && e.message ? e.message : String(e)));
+          }
           await dm.send("Merci : réponds à ces questions dans ce DM. Tape `done` quand tu as fini (ou attends 10 minutes).\nRéponds en un ou plusieurs messages.").catch(() => {});
 
           // Collecter les messages jusqu'à `done` ou timeout
@@ -273,9 +279,30 @@ export function initVerification(client) {
 
       let thread;
       try {
-        // Create thread first, then post the potentially long content using sendLong
-        thread = await forum.threads.create({ name: title, autoArchiveDuration: 10080 });
-        await sendLong(thread, postContent).catch(() => {});
+        // Discord requires a non-empty message when creating a forum thread. Use a short
+        // initial chunk for the thread creation, then post the remaining content with sendLong.
+        const FIRST_CHUNK_MAX = 1900; // leave room for appended hint
+        let firstChunk = postContent;
+        let remaining = '';
+        if (postContent.length > FIRST_CHUNK_MAX) {
+          firstChunk = postContent.slice(0, FIRST_CHUNK_MAX);
+          remaining = postContent.slice(FIRST_CHUNK_MAX);
+          // add a small hint to the initial message so staff know more content follows
+          firstChunk += '\n\n*(Message tronqué — le reste a été posté séparément)*';
+        }
+
+        thread = await forum.threads.create({ name: title, autoArchiveDuration: 10080, message: { content: firstChunk } });
+        logger.info(`Thread créé: id=${thread.id} name=${thread.name} starterMessageId=${thread.id ? 'unknown' : 'unknown'}`);
+
+        if (remaining && remaining.length > 0) {
+          try {
+            logger.debug(`Envoi du contenu restant vers le thread id=${thread.id} remainingLength=${remaining.length}`);
+            const r2 = await sendLong(thread, remaining).catch((e) => { logger.warn('sendLong thread a échoué: ' + (e && e.message ? e.message : String(e))); return null; });
+            if (r2 && r2.id) logger.info(`Chunks restants envoyés dans le thread (lastMessageId=${r2.id})`);
+          } catch (e) {
+            logger.warn('Erreur lors de l\'envoi des chunks restants vers le thread: ' + (e && e.message ? e.message : String(e)));
+          }
+        }
       } catch (err) {
         logger.error('Erreur en créant le thread/forum post: ' + (err && err.message ? err.message : String(err)));
         return;
