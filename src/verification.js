@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import logger from './logger.js';
 import telegram from './telegram.js';
+import { sendLong } from './sendLongMessage.js';
 
 const DEFAULT_QUESTIONS = [
   "Bonjour ! Peux-tu te présenter en quelques lignes ?",
@@ -157,8 +158,8 @@ export function initVerification(client) {
       if (dm) {
         // Si un message markdown complet est défini dans .env, on l'envoie et on collecte les réponses libres
         if (verifMessageMd) {
-          // Envoyer le message markdown configuré
-          await dm.send({ content: verifMessageMd }).catch(() => {});
+          // Envoyer le message markdown configuré (utiliser envoi segmenté si nécessaire)
+          await sendLong(dm, verifMessageMd).catch(() => {});
           await dm.send("Merci : réponds à ces questions dans ce DM. Tape `done` quand tu as fini (ou attends 10 minutes).\nRéponds en un ou plusieurs messages.").catch(() => {});
 
           // Collecter les messages jusqu'à `done` ou timeout
@@ -272,7 +273,9 @@ export function initVerification(client) {
 
       let thread;
       try {
-        thread = await forum.threads.create({ name: title, autoArchiveDuration: 10080, message: { content: postContent } });
+        // Create thread first, then post the potentially long content using sendLong
+        thread = await forum.threads.create({ name: title, autoArchiveDuration: 10080 });
+        await sendLong(thread, postContent).catch(() => {});
       } catch (err) {
         logger.error('Erreur en créant le thread/forum post: ' + (err && err.message ? err.message : String(err)));
         return;
