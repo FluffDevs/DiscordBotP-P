@@ -543,9 +543,129 @@ export function initVerification(client) {
     }
   }
 
+  // Helper: annuler / révoquer une vérification à tout moment par un gardien
+  async function handleCancel(guild, channel, moderatorUser, targetId) {
+    try {
+      // Prevent re-triggering
+      try {
+        const existing = store.verifications[targetId] || {};
+        store.verifications[targetId] = Object.assign({}, existing, { awaitingValidation: false });
+        saveStore();
+      } catch (e) { /* ignore store errors */ }
+
+      const target = await guild.members.fetch(targetId).catch(() => null);
+      if (!target) { await channel.send(`Membre visé introuvable sur le serveur.`).catch(() => {}); return; }
+
+      // Confirm intent and ask for justification
+      await channel.send(`<@${moderatorUser.id}> Vous êtes sur le point d'annuler la vérification et de retirer TOUS les rôles de <@${target.id}>. Tapez la raison du refus dans les 30 minutes pour notifier le membre.`).catch(() => {});
+      const filter = m => m.author.id === moderatorUser.id;
+      const collector = channel.createMessageCollector({ filter, max: 1, time: 30 * 60 * 1000 });
+      collector.on('collect', async (m) => {
+        const justification = m.content || 'Aucune raison fournie';
+
+        // Attempt to remove all roles from the target (except @everyone) by clearing roles array
+        try {
+          logger.info(`Annulation: suppression des rôles pour ${target.id} par ${moderatorUser.id}`);
+          const ok = await tryRoleOperation(() => target.roles.set([]), `retirer tous les rôles à ${target.id}`, channel);
+          if (!ok) {
+            // If bulk set failed, try to remove roles one by one (best-effort)
+            try {
+              const roleIds = target.roles.cache.map(r => r.id).filter(id => id && id !== guild.id);
+              for (const rid of roleIds) {
+                const rObj = guild.roles.cache.get(rid);
+                if (rObj) {
+                  await tryRoleOperation(() => target.roles.remove(rObj), `retirer le rôle ${rObj.id || rObj.name} à ${target.id}`, channel);
+                }
+              }
+            } catch (e) { /* ignore */ }
+          }
+        } catch (err) { logger.warn('Erreur lors de la suppression des rôles: ' + (err && err.message ? err.message : String(err))); }
+
+        // Re-assign non-verified role if configured
+        if (nonVerifiedRole) {
+          try {
+            const r = guild.roles.cache.get(nonVerifiedRole) || guild.roles.cache.find(x => x.name === nonVerifiedRole);
+            if (r) {
+              const ok2 = await tryRoleOperation(() => target.roles.add(r), `ajouter le rôle non-vérifié ${r.id || r.name} à ${target.id}`, channel);
+              if (ok2) logger.info(`Rôle non-vérifié ré-appliqué après annulation: ${r.id || r.name} target=${target.id} by=${moderatorUser.id}`);
+            } else {
+              logger.warn(`nonVerifiedRole configuré mais introuvable sur la guild: ${nonVerifiedRole} (guild=${guild.id})`);
+            }
+          } catch (e) { /* ignore */ }
+        }
+
+        // Notify the target via DM with the reason
+        try {
+          await target.send(`Votre vérification sur ${guild.name} a été annulée par l'équipe de modération. Raison donnée :\n\n${justification}`).catch(() => {});
+        } catch (e) { /* ignore DM failure */ }
+
+        // Persist cancellation in store
+        try {
+          const existing2 = store.verifications[targetId] || {};
+          store.verifications[targetId] = Object.assign({}, existing2, { status: 'cancelled', cancelledAt: Date.now(), cancelledBy: moderatorUser.id, cancelledReason: justification });
+          saveStore();
+        } catch (e) { /* ignore store errors */ }
+
+        // Confirm in thread and notify Telegram
+        await channel.send(`✅ Vérification annulée par <@${moderatorUser.id}> et raison transmise au membre.`).catch(() => {});
+        try {
+          const tg = `❌ Vérification ANNULÉE
+Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${moderatorUser.tag ? moderatorUser.tag : moderatorUser.id} (${moderatorUser.id})\nRaison: ${justification}`;
+          setImmediate(() => { try { telegram.enqueueVerification(tg); } catch (e) { /* ignore */ } });
+        } catch (e) { /* ignore */ }
+      });
+    } catch (err) {
+      logger.error('Erreur dans handleCancel: ' + (err && err.message ? err.message : String(err)));
+    }
+  }
+
   // Lorsqu'un membre arrive
   client.on('guildMemberAdd', async (member) => {
     await runVerificationForMember(member);
+  });
+
+  // Allow guardians to cancel a verification by typing 'annuler' outside of threads as well.
+  client.on('messageCreate', async (msg) => {
+    try {
+      if (msg.author.bot) return;
+      const channel = msg.channel;
+      const guild = msg.guild;
+      if (!guild) return;
+
+      const text = (msg.content || '').toLowerCase().trim();
+      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke)\b/;
+      if (!cancelRe.test(text)) return;
+
+      // vérifier que l'auteur est autorisé (manageGuild ou role verifier)
+      const member = await guild.members.fetch(msg.author.id).catch(() => null);
+      if (!member) return;
+      let allowed = false;
+      if (member.permissions && member.permissions.has(PermissionsBitField.Flags.ManageGuild)) allowed = true;
+      if (verifierRole) {
+        const r = guild.roles.cache.get(verifierRole) || guild.roles.cache.find(x => x.name === verifierRole);
+        if (r && member.roles.cache.has(r.id)) allowed = true;
+      }
+      if (!allowed) return;
+
+      // try to find a target: either a mentioned user or an id in the message
+      let targetId = null;
+      const mention = msg.mentions.users.first();
+      if (mention) targetId = mention.id;
+      if (!targetId) {
+        const mm = msg.content.match(/verification_member_id:(\d+)/);
+        if (mm) targetId = mm[1];
+      }
+      if (!targetId) {
+        const mm2 = msg.content.match(/(\d{16,})/);
+        if (mm2) targetId = mm2[1];
+      }
+      if (!targetId) {
+        await channel.send(`<@${msg.author.id}> Indiquez le membre à annuler en le mentionnant ou en incluant son ID.`).catch(() => {});
+        return;
+      }
+
+      await handleCancel(guild, channel, msg.author, targetId);
+    } catch (err) { logger.error('Erreur dans messageCreate (global cancel): ' + (err && err.message ? err.message : String(err))); }
   });
 
   // Gestion des réactions (accepter/refuser)
@@ -657,10 +777,13 @@ export function initVerification(client) {
       const text = (msg.content || '').toLowerCase().trim();
       const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved)\b/;
       const rejectRe = /^\s*(?:non|n|no|reject|refuse|refuser|deny|denied)\b/;
+      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke)\b/;
       if (acceptRe.test(text)) {
         await handleAccept(guild, channel, msg.author, targetId);
       } else if (rejectRe.test(text)) {
         await handleReject(guild, channel, msg.author, targetId);
+      } else if (cancelRe.test(text)) {
+        await handleCancel(guild, channel, msg.author, targetId);
       }
     } catch (err) { logger.error('Erreur dans messageCreate (thread quick-validate): ' + (err && err.message ? err.message : String(err))); }
   });
