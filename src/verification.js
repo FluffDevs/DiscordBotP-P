@@ -645,22 +645,38 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
         const r = guild.roles.cache.get(verifierRole) || guild.roles.cache.find(x => x.name === verifierRole);
         if (r && member.roles.cache.has(r.id)) allowed = true;
       }
-      if (!allowed) return;
+      if (!allowed) {
+        // Send explicit unauthorized message to avoid confusion
+        await channel.send(`<@${msg.author.id}> Vous n'êtes pas autorisé·e à annuler une vérification.`).catch(() => {});
+        return;
+      }
 
-      // try to find a target: either a mentioned user or an id in the message
+      // try to find a target: prefer explicit mention, then various ID formats
       let targetId = null;
-      const mention = msg.mentions.users.first();
+      // 1) direct discord mention (handled by discord.js)
+      const mention = msg.mentions && msg.mentions.users ? msg.mentions.users.first() : null;
       if (mention) targetId = mention.id;
+
+      // 2) explicit embedded verification tag (legacy)
       if (!targetId) {
-        const mm = msg.content.match(/verification_member_id:(\d+)/);
+        const mm = msg.content.match(/verification_member_id:(\d+)/i);
         if (mm) targetId = mm[1];
       }
+
+      // 3) raw mention forms like <@123> or <@!123>
       if (!targetId) {
-        const mm2 = msg.content.match(/(\d{16,})/);
-        if (mm2) targetId = mm2[1];
+        const m2 = msg.content.match(/<@!?(\d+)>/);
+        if (m2) targetId = m2[1];
       }
+
+      // 4) plain numeric id somewhere in the message (avoid matching short numbers)
       if (!targetId) {
-        await channel.send(`<@${msg.author.id}> Indiquez le membre à annuler en le mentionnant ou en incluant son ID.`).catch(() => {});
+        const m3 = msg.content.match(/(?:^|\D)(\d{16,19})(?:\D|$)/);
+        if (m3) targetId = m3[1];
+      }
+
+      if (!targetId) {
+        await channel.send(`<@${msg.author.id}> Indiquez le membre à annuler en le mentionnant ou en incluant son ID (ex: <@123...> ou 123...).`).catch(() => {});
         return;
       }
 
@@ -768,22 +784,35 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
       }
       if (!targetId) return; // nothing to do
 
-      // Only handle quick accept/reject messages if the verification is still awaiting initial validation
-      try {
-        const ver = store.verifications[targetId] || {};
-        if (!ver.awaitingValidation) return;
-      } catch (e) { /* ignore store access errors */ }
-
+      // Read message text and patterns
       const text = (msg.content || '').toLowerCase().trim();
       const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved)\b/;
       const rejectRe = /^\s*(?:non|n|no|reject|refuse|refuser|deny|denied)\b/;
       const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke)\b/;
+
+      // Load stored verification info (best-effort)
+      let ver = {};
+      try { ver = store.verifications[targetId] || {}; } catch (e) { ver = {}; }
+
+      // If author asked to cancel, always handle cancellation (can be triggered at any time in the thread)
+      if (cancelRe.test(text)) {
+        if (!targetId) {
+          await channel.send(`<@${msg.author.id}> Impossible de retrouver le membre ciblé pour l'annulation. Assurez-vous que le thread contient la meta de vérification ou mentionnez le membre.`).catch(() => {});
+          return;
+        }
+        await handleCancel(guild, channel, msg.author, targetId);
+        return;
+      }
+
+      // For accept/reject quick messages, only allow when the verification is still awaitingValidation
+      try {
+        if (!ver.awaitingValidation) return;
+      } catch (e) { /* ignore store access errors */ }
+
       if (acceptRe.test(text)) {
         await handleAccept(guild, channel, msg.author, targetId);
       } else if (rejectRe.test(text)) {
         await handleReject(guild, channel, msg.author, targetId);
-      } else if (cancelRe.test(text)) {
-        await handleCancel(guild, channel, msg.author, targetId);
       }
     } catch (err) { logger.error('Erreur dans messageCreate (thread quick-validate): ' + (err && err.message ? err.message : String(err))); }
   });
