@@ -633,7 +633,7 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
       if (!guild) return;
 
       const text = (msg.content || '').toLowerCase().trim();
-      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke)\b/;
+      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|stop)\b/;
       if (!cancelRe.test(text)) return;
 
       // vérifier que l'auteur est autorisé (manageGuild ou role verifier)
