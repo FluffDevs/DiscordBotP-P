@@ -676,7 +676,8 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
       }
 
       if (!targetId) {
-        await channel.send(`<@${msg.author.id}> Indiquez le membre à annuler en le mentionnant ou en incluant son ID (ex: <@123...> ou 123...).`).catch(() => {});
+        // Target not found: do not post a public prompt in the forum to avoid noise.
+        // Simply return silently; moderators can re-run with a mention/ID if needed.
         return;
       }
 
