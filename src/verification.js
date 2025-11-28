@@ -747,6 +747,17 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
         const mention = message.mentions.users.first();
         if (mention) targetId = mention.id;
       }
+      // Fallback: if still unknown (message truncated / topic not set), try to find matching entry in the store by threadId
+      if (!targetId) {
+        try {
+          for (const [mid, info] of Object.entries(store.verifications || {})) {
+            if (info && (String(info.threadId) === String(channel.id) || String(info.threadId) === String(channel.id))) {
+              targetId = mid;
+              break;
+            }
+          }
+        } catch (e) { /* ignore fallback errors */ }
+      }
       if (!targetId) { await channel.send(`Impossible de retrouver l'identité du membre à vérifier.`).catch(() => {}); return; }
 
       const target = await guild.members.fetch(targetId).catch(() => null);
@@ -806,6 +817,17 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
       if (!targetId) {
         const mention = msg.mentions.users.first();
         if (mention) targetId = mention.id;
+      }
+      if (!targetId) {
+        // Fallback: try to find the targetId from persisted store using the thread id
+        try {
+          for (const [mid, info] of Object.entries(store.verifications || {})) {
+            if (info && (String(info.threadId) === String(channel.id) || String(info.threadId) === String(channel.id))) {
+              targetId = mid;
+              break;
+            }
+          }
+        } catch (e) { /* ignore */ }
       }
       if (!targetId) return; // nothing to do
 

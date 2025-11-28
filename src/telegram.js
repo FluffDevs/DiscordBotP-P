@@ -75,7 +75,10 @@ function ensureFlushTimer() {
 
 function enqueue(text) {
   if (!text) return false;
-  queue.push(String(text));
+  const t = String(text);
+  try { logger.info(`Telegram: enqueue message (len=${t.length})`, { noTelegram: true }); } catch (e) {}
+  try { logger.debug && logger.debug(`Telegram: enqueue content:\n${t}`, { noTelegram: true }); } catch (e) {}
+  queue.push(t);
   // persist the queue to disk immediately to avoid losses
   persistQueue();
   // ensure timer running
@@ -115,11 +118,19 @@ async function flushQueue() {
 
   // attempt to send all chunks; if any send fails we keep remaining messages
   try {
-    for (const c of chunks) {
-      // Send as plain text to avoid Markdown formatting causing hidden/truncated
-      // output in some clients. If you prefer formatted Markdown, we can switch
-      // to MarkdownV2 and escape content.
-      await bot.sendMessage(chatId, c).catch((e) => { throw e; });
+    for (const [i, c] of chunks.entries()) {
+      try {
+        try { logger.info(`Telegram: sending chunk ${i + 1}/${chunks.length} (len=${c.length})`, { noTelegram: true }); } catch (e) {}
+        try { logger.debug && logger.debug(`Telegram: chunk content:\n${c}`, { noTelegram: true }); } catch (e) {}
+        // Send as plain text to avoid Markdown formatting causing hidden/truncated
+        // output in some clients. If you prefer formatted Markdown, we can switch
+        // to MarkdownV2 and escape content.
+        await bot.sendMessage(chatId, c).catch((e) => { throw e; });
+        try { logger.info(`Telegram: chunk ${i + 1}/${chunks.length} sent successfully`, { noTelegram: true }); } catch (e) {}
+      } catch (e) {
+        try { logger.warn(`Telegram: failed to send chunk ${i + 1}/${chunks.length}: ${e && e.message ? e.message : String(e)}`, { noTelegram: true }); } catch (ex) {}
+        throw e;
+      }
       // small delay between chunks to be polite
       await new Promise(r => setTimeout(r, 200));
     }
