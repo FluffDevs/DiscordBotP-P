@@ -48,6 +48,10 @@ export function initVerification(client) {
     }
   }
 
+  // Cooldown pour le bouton de demande de vérification (empêche le spam)
+  const REQUEST_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes
+  const lastRequest = new Map(); // memberId -> timestamp
+
   // Helper: try an async role operation with retries on transient errors (rate-limit/network)
   async function tryRoleOperation(opFn, contextMsg, channel) {
     const maxAttempts = 3;
@@ -277,6 +281,16 @@ export function initVerification(client) {
       contentLines.push('\n\n*Meta: verification_member_id:' + member.id + '*');
       const postContent = contentLines.join('\n\n');
 
+      // Si la vérification a été annulée entre-temps, interrompre la publication
+      try {
+        const existingVerif = store.verifications[member.id] || {};
+        if (existingVerif.status === 'cancelled') {
+          logger.info(`Vérification pour ${member.id} annulée avant publication; interruption.`);
+          try { if (dm) await dm.send("Votre vérification a été annulée par l'équipe de modération et ne sera pas traitée.").catch(() => {}); } catch (e) { /* ignore */ }
+          return;
+        }
+      } catch (e) { /* ignore store check errors */ }
+
       let thread;
       try {
         // Discord requires a non-empty message when creating a forum thread. Use a short
@@ -344,6 +358,10 @@ export function initVerification(client) {
       // Prevent double-processing: check persisted store for status
       try {
         const existing = store.verifications[targetId] || {};
+        if (existing.status === 'cancelled') {
+          await channel.send(`Cette vérification a été annulée et ne peut pas être acceptée.`).catch(() => {});
+          return;
+        }
         if (existing.status === 'processing' || existing.status === 'accepted') {
           await channel.send(`Cette vérification est déjà en cours ou a déjà été traitée.`).catch(() => {});
           return;
@@ -400,9 +418,10 @@ export function initVerification(client) {
         // 1) question majeur / mineur
         if (majorRole || minorRole) {
           try {
-            await channel.send(`<@${moderatorId}> Le membre est-il **majeur** ou **mineur** ? (majeur / mineur)`).catch(() => {});
+            await channel.send(`<@${moderatorId}> Le membre est-il **majeur** ou **mineur** ? (majeur / mineur) — vous avez 5 minutes.`).catch(() => {});
             const filterAge = m => m.author.id === moderatorId && /^(?:majeur|mineur|major|minor)$/i.test((m.content || '').trim());
-            const collectedAge = await channel.awaitMessages({ filter: filterAge, max: 1, time: 10 * 60 * 1000 }).catch(() => null);
+            // Donner 5 minutes au vérifieur pour décider du rôle d'âge
+            const collectedAge = await channel.awaitMessages({ filter: filterAge, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
             if (collectedAge && collectedAge.size > 0) {
               const ans = collectedAge.first().content.trim().toLowerCase();
               if (/^majeur|^major/i.test(ans)) {
@@ -452,9 +471,10 @@ export function initVerification(client) {
         // 2) question artiste (après avoir donné le rôle peluche)
         if (artistRole) {
           try {
-            await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non)`).catch(() => {});
+            await channel.send(`<@${moderatorId}> Voulez-vous attribuer le rôle \"artiste\" à <@${target.id}> ? (oui / non) — vous avez 5 minutes.`).catch(() => {});
             const filter = m => m.author.id === moderatorId && /^(?:oui|o|yes|y|non|n|no)$/i.test((m.content || '').trim());
-            const collected = await channel.awaitMessages({ filter, max: 1, time: 10 * 60 * 1000 }).catch(() => null);
+            // Donner 5 minutes au vérifieur pour décider d'attribuer le rôle "artiste"
+            const collected = await channel.awaitMessages({ filter, max: 1, time: 5 * 60 * 1000 }).catch(() => null);
             if (!collected || collected.size === 0) {
               await channel.send('Pas de réponse — pas d\'attribution du rôle "artiste".').catch(() => {});
             } else {
@@ -516,6 +536,10 @@ export function initVerification(client) {
       // Ensure we don't re-trigger validation handlers for subsequent messages
       try {
         const existing = store.verifications[targetId] || {};
+        if (existing.status === 'cancelled') {
+          await channel.send(`Cette vérification a été annulée et ne peut pas être refusée.`).catch(() => {});
+          return;
+        }
         store.verifications[targetId] = Object.assign({}, existing, { awaitingValidation: false });
         saveStore();
       } catch (e) { /* ignore store errors */ }
@@ -834,6 +858,20 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
         await interaction.reply({ content: `Impossible de lancer la vérification (membre introuvable).`, ephemeral: true }).catch(() => {});
         return;
       }
+
+      // Cooldown check: empêcher un utilisateur de cliquer plusieurs fois en 3 minutes
+      try {
+        const now = Date.now();
+        const last = lastRequest.get(member.id) || 0;
+        if (now - last < REQUEST_COOLDOWN_MS) {
+          const remaining = Math.ceil((REQUEST_COOLDOWN_MS - (now - last)) / 1000);
+          await interaction.reply({ content: `🔁 Tu as récemment demandé une vérification. Merci d'attendre ${remaining} secondes avant de réessayer.`, ephemeral: true }).catch(() => {});
+          return;
+        }
+        lastRequest.set(member.id, now);
+        // cleanup automatique pour éviter fuite mémoire
+        setTimeout(() => { try { lastRequest.delete(member.id); } catch(e){} }, REQUEST_COOLDOWN_MS + 1000);
+      } catch (e) { /* ignore cooldown errors */ }
 
       await interaction.deferReply({ ephemeral: true }).catch(() => {});
       await runVerificationForMember(member);
