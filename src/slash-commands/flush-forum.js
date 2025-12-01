@@ -166,12 +166,62 @@ export default {
         }
       }
 
-      // Delete all threads except keepThreadId
+      // For each thread: save all messages to a backup file, then delete the thread.
+      // If any thread backup fails, abort the entire operation for safety.
+      const BACKUP_DIR = path.join(process.cwd(), 'data', 'thread-backups');
+      try { if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch (e) { /* ignore */ }
+
       for (const [id, thread] of threadsMap) {
-        if (String(id) === String(keepThreadId)) continue;
+        results.total++;
         try {
-          await thread.delete();
-          results.deleted++;
+          // Collect messages (including starter) via pagination
+          const messagesArr = [];
+          // starter
+          try {
+            const starter = await thread.fetchStarterMessage().catch(() => null);
+            if (starter) {
+              messagesArr.push({ id: starter.id, authorId: starter.author?.id, authorTag: starter.author?.tag, content: starter.content, createdAt: starter.createdTimestamp, attachments: starter.attachments ? Array.from(starter.attachments.values()).map(a=>a.url) : [] });
+            }
+          } catch (e) { /* ignore starter errors */ }
+
+          // Paginate through messages (newest first)
+          let before = undefined;
+          while (true) {
+            const opts = { limit: 100 };
+            if (before) opts.before = before;
+            const batch = await thread.messages.fetch(opts).catch(() => null);
+            if (!batch || batch.size === 0) break;
+            // push in chronological order of the batch (reverse the collection)
+            const arr = Array.from(batch.values()).reverse();
+            for (const m of arr) {
+              messagesArr.push({ id: m.id, authorId: m.author?.id, authorTag: m.author?.tag, content: m.content, createdAt: m.createdTimestamp, attachments: m.attachments ? Array.from(m.attachments.values()).map(a=>a.url) : [] });
+            }
+            if (batch.size < 100) break;
+            before = Array.from(batch.keys()).pop();
+          }
+
+          // Write backup file for this thread
+          const outPath = path.join(BACKUP_DIR, id + '.json');
+          try {
+            const payload = { threadId: thread.id, threadName: thread.name, createdAt: thread.createdTimestamp, messages: messagesArr };
+            fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
+          } catch (e) {
+            // Failed to write backup -> abort entire operation
+            results.errors.push({ threadId: id, message: 'Backup write failed: ' + (e && e.message ? e.message : String(e)) });
+            await interaction.followUp({ content: 'Erreur: impossible de sauvegarder les messages du thread ' + id + '. Opération annulée pour sécurité.' });
+            return;
+          }
+
+          // After successful backup, delete thread
+          try {
+            await thread.delete();
+            results.deleted++;
+            results.saved = (results.saved || 0) + 1;
+          } catch (e) {
+            results.errors.push({ threadId: id, message: 'Delete failed: ' + (e && e.message ? e.message : String(e)) });
+            // continue with next thread
+          }
+
         } catch (err) {
           results.errors.push({ threadId: id, message: err && err.message ? err.message : String(err) });
         }
