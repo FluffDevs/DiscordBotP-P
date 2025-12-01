@@ -6,7 +6,7 @@ import logger from '../logger.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('flushforum')
-    .setDescription('Supprime tous les posts de vérification présents dans le forum et vide le store (Administrateur uniquement).'),
+    .setDescription('Supprime tous les posts du forum de vérification sauf le premier épinglé.'),
   async execute(interaction) {
     try {
       const member = interaction.member;
