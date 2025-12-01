@@ -169,10 +169,19 @@ export default {
       // For each thread: save all messages to a backup file, then delete the thread.
       // If any thread backup fails, abort the entire operation for safety.
       const BACKUP_DIR = path.join(process.cwd(), 'data', 'thread-backups');
-      try { if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch (e) { /* ignore */ }
+      try {
+        if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+      } catch (e) {
+        await interaction.followUp({ content: 'Erreur: impossible de créer le dossier de sauvegarde des threads: ' + (e && e.message ? e.message : String(e)) });
+        return;
+      }
+
+      // Inform how many threads we'll process
+      try { await interaction.followUp({ content: `Threads trouvés: ${threadsMap.size}. Sauvegarde en cours...` }); } catch (e) {}
 
       for (const [id, thread] of threadsMap) {
         results.total++;
+        results.savedPaths = results.savedPaths || [];
         try {
           // Collect messages (including starter) via pagination
           const messagesArr = [];
@@ -205,6 +214,7 @@ export default {
           try {
             const payload = { threadId: thread.id, threadName: thread.name, createdAt: thread.createdTimestamp, messages: messagesArr };
             fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
+            results.savedPaths.push(outPath);
           } catch (e) {
             // Failed to write backup -> abort entire operation
             results.errors.push({ threadId: id, message: 'Backup write failed: ' + (e && e.message ? e.message : String(e)) });
@@ -241,9 +251,16 @@ export default {
         results.errors.push({ message: 'Impossible d\'écrire le store: ' + (e && e.message ? e.message : String(e)) });
       }
 
-  const summary = 'Flush forum: total=' + results.total + ' supprimés=' + results.deleted + ' gardé=' + (keepThreadId ? keepThreadId : 'aucun') + ' erreurs=' + results.errors.length;
+      const summary = 'Flush forum: total=' + results.total + ' sauvegardés=' + (results.saved || 0) + ' supprimés=' + results.deleted + ' gardé=' + (keepThreadId ? keepThreadId : 'aucun') + ' erreurs=' + results.errors.length;
       // Public confirmation in the same channel
-      await interaction.followUp({ content: summary });
+      try {
+        const lines = [summary];
+        if (results.savedPaths && results.savedPaths.length > 0) {
+          lines.push('Backups créés: ' + results.savedPaths.length + ' (exemple: ' + results.savedPaths.slice(0, 5).map(p => path.basename(p)).join(', ') + (results.savedPaths.length > 5 ? ', ...' : '') + ')');
+        }
+        if (results.errors && results.errors.length > 0) lines.push('Erreurs: ' + results.errors.length + ' (voir logs)');
+        await interaction.followUp({ content: lines.join('\n') });
+      } catch (e) { await interaction.followUp({ content: summary }); }
       if (results.errors.length > 0) {
         try { logger.warn(['/flushforum erreurs:', results.errors]); } catch (e) {}
       }
