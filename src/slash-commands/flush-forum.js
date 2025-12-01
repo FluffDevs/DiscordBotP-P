@@ -36,8 +36,8 @@ export default {
       await interaction.reply({ content: prompt, components: [], ephemeral: false });
 
       const confirmRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`flushforum_confirm:${interaction.user.id}`).setLabel('Confirmer').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId(`flushforum_cancel:${interaction.user.id}`).setLabel('Annuler').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('flushforum_confirm:' + interaction.user.id).setLabel('Confirmer').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('flushforum_cancel:' + interaction.user.id).setLabel('Annuler').setStyle(ButtonStyle.Secondary)
       );
 
       // Edit the public reply to add the confirmation buttons
@@ -156,7 +156,7 @@ export default {
       const DATA_FILE = path.join(DATA_DIR, 'verifications.json');
       if (fs.existsSync(DATA_FILE)) {
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const bak = path.join(DATA_DIR, `verifications.json.bak.${stamp}`);
+  const bak = path.join(DATA_DIR, 'verifications.json.bak.' + stamp);
         try {
           fs.copyFileSync(DATA_FILE, bak);
         } catch (e) {
@@ -191,7 +191,7 @@ export default {
         results.errors.push({ message: 'Impossible d\'écrire le store: ' + (e && e.message ? e.message : String(e)) });
       }
 
-      const summary = `Flush forum: total=${results.total} supprimés=${results.deleted} gardé=${keepThreadId ? keepThreadId : 'aucun'} erreurs=${results.errors.length}`;
+  const summary = 'Flush forum: total=' + results.total + ' supprimés=' + results.deleted + ' gardé=' + (keepThreadId ? keepThreadId : 'aucun') + ' erreurs=' + results.errors.length;
       // Public confirmation in the same channel
       await interaction.followUp({ content: summary });
       if (results.errors.length > 0) {
