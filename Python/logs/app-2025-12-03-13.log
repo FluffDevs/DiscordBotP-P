@@ -2,3 +2,13 @@
 
 [2025-12-03T13:20:40.709821] [INFO] Logger initialisé (smoke test)
 [2025-12-03T13:33:32.933228] [INFO] Logger initialisé (smoke test)
+[2025-12-03T13:44:35.302600] [INFO] Logger initialisé (smoke test)
+[2025-12-03T13:51:16.603303] [INFO] Chargée commande préfixe: ping
+[2025-12-03T13:51:16.611811] [INFO] Chargée slash-command: flushforum
+[2025-12-03T13:51:16.626264] [INFO] Chargée slash-command: flush-telegram
+[2025-12-03T13:51:16.641079] [INFO] Chargée slash-command: liste
+[2025-12-03T13:51:16.655052] [INFO] Chargée slash-command: msgverif
+[2025-12-03T13:51:16.670715] [INFO] Chargée slash-command: ping
+[2025-12-03T13:51:16.686180] [INFO] Chargée slash-command: say
+[2025-12-03T13:51:16.699544] [INFO] Chargée slash-command: testtg
+[2025-12-03T13:51:20.247065] [INFO] VerificationManager attached handlers (ready)

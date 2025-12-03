@@ -752,4 +752,3 @@ class VerificationManager:
                 await channel.send('Aucune raison fournie — annulation abandonnée.')
         except Exception as err:
             self.logger.error(f'Erreur dans handle_cancel: {err}')
-
