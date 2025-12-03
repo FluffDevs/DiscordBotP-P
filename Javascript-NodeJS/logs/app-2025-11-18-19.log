@@ -1,0 +1,15 @@
+/*
+ * Peluche Bot — programme personnel de Electro / MathéoCASSY
+ * https://github.com/MatheoCASSY/
+ */
+
+[2025-11-18T18:25:58.257Z] [INFO] Prêt à déployer 6 slash-commands: flush-telegram, liste, msgverif, ping, say, testtg
+[2025-11-18T18:25:58.260Z] [INFO] Récupération des guilds du bot et déploiement sur chacune...
+[2025-11-18T18:26:05.613Z] [INFO] Déploiement pour guild 1289105777726062624 (Math²)...
+[2025-11-18T18:26:05.919Z] [INFO]   OK — 6 commandes déployées
+[2025-11-18T18:26:06.922Z] [INFO] Déploiement pour guild 1363464803036823633 (Peluches & Paix)...
+[2025-11-18T18:26:07.134Z] [INFO]   OK — 6 commandes déployées
+[2025-11-18T18:26:20.290Z] [INFO] Telegram: démarrage du flush (6 messages en file)
+[2025-11-18T18:26:20.295Z] [INFO] Telegram: démarrage du flush (6 messages en file)
+[2025-11-18T18:26:20.897Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
+[2025-11-18T18:26:20.928Z] [INFO] Telegram: flush réussi, 1 chunk(s) envoyés, file vidée.
