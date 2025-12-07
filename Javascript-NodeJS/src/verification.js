@@ -190,7 +190,6 @@ export function initVerification(client) {
           answers.push({ question: 'Réponses', answer: combined });
 
           // Si l'utilisateur a explicitement envoyé 'done', envoyer une confirmation en DM
-          // et tenter de retirer les réactions existantes (✅ / ❌) sur un thread de verification déjà enregistré.
           if (reason === 'done') {
             try {
               await dm.send("Votre vérification a bien été reçue et sera bientôt traitée.").catch(() => {});
@@ -388,7 +387,7 @@ export function initVerification(client) {
         }
       }
 
-      // Ajouter PELUCHER_ROLE si configuré
+      // Ajouter PELUCHE_ROLE/vérifié si configuré
       if (pelucheRole) {
         const r2 = guild.roles.cache.get(pelucheRole) || guild.roles.cache.find(x => x.name === pelucheRole);
         if (r2) {
@@ -833,9 +832,9 @@ Membre: ${target.user ? target.user.tag : target.id} (${target.id})\nPar: ${mode
 
       // Read message text and patterns
       const text = (msg.content || '').toLowerCase().trim();
-      const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved)\b/;
-      const rejectRe = /^\s*(?:non|n|no|reject|refuse|refuser|deny|denied)\b/;
-      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke)\b/;
+      const acceptRe = /^\s*(?:oui|o|yes|y|accept|ok|valide|valider|approve|approved|bwip)\b/;
+      const rejectRe = /^\s*(?:non|n|no|reject|refuse|refuser|deny|denied|nope)\b/;
+      const cancelRe = /^\s*(?:annuler|cancel|revoquer|revoqué|revoke|ohhellno)\b/;
 
       // Load stored verification info (best-effort)
       let ver = {};
