@@ -1,13 +1,16 @@
 /*
- * Helper minimal pour envoyer des messages vers un groupe Telegram
+ * Minimal Telegram helper using direct HTTPS API calls instead of
+ * `node-telegram-bot-api`. This avoids pulling legacy `request` /
+ * `form-data` / `tough-cookie` dependencies.
+ *
  * Configurez TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID dans votre .env
  */
 
 import dotenv from 'dotenv';
 dotenv.config();
-import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import path from 'path';
+import https from 'node:https';
 import logger from './logger.js';
 
 // Configuration via env
@@ -19,16 +22,6 @@ const maxMessageSize = 3800; // leave margin from 4096 limit
 const DATA_DIR = path.join(process.cwd(), 'data');
 const QUEUE_FILE = path.join(DATA_DIR, 'telegram-queue.json');
 try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { /* ignore */ }
-
-let bot = null;
-if (token) {
-  try {
-    bot = new TelegramBot(token, { polling: false });
-  } catch (e) {
-    bot = null;
-    try { logger.warn('Telegram bot init failed: ' + (e && e.message ? e.message : String(e)), { noTelegram: true }); } catch (ex) {}
-  }
-}
 
 // Simple in-memory queue for batching messages
 const queue = [];
@@ -86,15 +79,55 @@ function enqueue(text) {
   return true;
 }
 
+function sendTelegram(method, body) {
+  return new Promise((resolve, reject) => {
+    if (!token) return reject(new Error('TELEGRAM_BOT_TOKEN not configured'));
+    const data = JSON.stringify(body);
+    const options = {
+      hostname: 'api.telegram.org',
+      path: `/bot${token}/${method}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+    const req = https.request(options, (res) => {
+      let chunks = '';
+      res.on('data', (c) => { chunks += c; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(chunks || '{}');
+          if (parsed && parsed.ok) return resolve(parsed.result);
+          return reject(new Error(parsed && parsed.description ? parsed.description : `Telegram error, status ${res.statusCode}`));
+        } catch (e) {
+          return reject(e);
+        }
+      });
+    });
+    req.on('error', (e) => reject(e));
+    req.write(data);
+    req.end();
+  });
+}
+
+async function sendMessageToChat(chat, text, options = {}) {
+  const payload = { chat_id: chat, text: String(text), disable_web_page_preview: true };
+  // Allow passing parse_mode and other options if needed
+  if (options.parse_mode) payload.parse_mode = options.parse_mode;
+  if (options.disable_web_page_preview !== undefined) payload.disable_web_page_preview = options.disable_web_page_preview;
+  return sendTelegram('sendMessage', payload);
+}
+
 async function flushQueue() {
   if (queue.length === 0) return;
 
   try { logger.info(`Telegram: démarrage du flush (${queue.length} messages en file)`, { noTelegram: true }); } catch (e) {}
 
-  // If bot or chatId not configured, persist and reschedule flush
-  if (!bot || !chatId) {
-    try { logger.warn('Telegram: bot non initialisé ou TELEGRAM_CHAT_ID manquant — les messages ne seront pas envoyés.', { noTelegram: true }); } catch (e) {}
-    if (!bot) try { logger.warn('Telegram: TELEGRAM_BOT_TOKEN non configuré ou invalide.', { noTelegram: true }); } catch (e) {}
+  // If token or chatId not configured, persist and reschedule flush
+  if (!token || !chatId) {
+    try { logger.warn('Telegram: token ou TELEGRAM_CHAT_ID manquant — les messages ne seront pas envoyés.', { noTelegram: true }); } catch (e) {}
+    if (!token) try { logger.warn('Telegram: TELEGRAM_BOT_TOKEN non configuré ou invalide.', { noTelegram: true }); } catch (e) {}
     if (!chatId) try { logger.warn('Telegram: TELEGRAM_CHAT_ID manquant.', { noTelegram: true }); } catch (e) {}
     persistQueue();
     // reschedule
@@ -122,10 +155,7 @@ async function flushQueue() {
       try {
         try { logger.info(`Telegram: sending chunk ${i + 1}/${chunks.length} (len=${c.length})`, { noTelegram: true }); } catch (e) {}
         try { logger.debug && logger.debug(`Telegram: chunk content:\n${c}`, { noTelegram: true }); } catch (e) {}
-        // Send as plain text to avoid Markdown formatting causing hidden/truncated
-        // output in some clients. If you prefer formatted Markdown, we can switch
-        // to MarkdownV2 and escape content.
-        await bot.sendMessage(chatId, c).catch((e) => { throw e; });
+        await sendMessageToChat(chatId, c);
         try { logger.info(`Telegram: chunk ${i + 1}/${chunks.length} sent successfully`, { noTelegram: true }); } catch (e) {}
       } catch (e) {
         try { logger.warn(`Telegram: failed to send chunk ${i + 1}/${chunks.length}: ${e && e.message ? e.message : String(e)}`, { noTelegram: true }); } catch (ex) {}
@@ -138,12 +168,12 @@ async function flushQueue() {
     const sentCount = chunks.length;
     queue.length = 0;
     persistQueue();
-  try { logger.info(`Telegram: flush réussi, ${sentCount} chunk(s) envoyés, file vidée.`, { noTelegram: true }); } catch (e) {}
+    try { logger.info(`Telegram: flush réussi, ${sentCount} chunk(s) envoyés, file vidée.`, { noTelegram: true }); } catch (e) {}
   } catch (e) {
-  try { logger.warn('Telegram send failed during flush: ' + (e && e.message ? e.message : String(e)), { noTelegram: true }); } catch (ex) {}
+    try { logger.warn('Telegram send failed during flush: ' + (e && e.message ? e.message : String(e)), { noTelegram: true }); } catch (ex) {}
     // keep queue as-is and persist
     persistQueue();
-  try { logger.warn('Telegram: flush échoué, messages conservés pour tentative ultérieure.', { noTelegram: true }); } catch (e) {}
+    try { logger.warn('Telegram: flush échoué, messages conservés pour tentative ultérieure.', { noTelegram: true }); } catch (e) {}
     // reschedule next flush
     ensureFlushTimer();
   }
@@ -157,7 +187,7 @@ try {
 } catch (e) { /* ignore */ }
 
 // Start a periodic flush to ensure queued messages are sent even
-// si aucune nouvelle enqueue n'est appelée (fix: previously flush only scheduled on enqueue)
+// si aucune nouvelle enqueue n'est appelée
 try {
   periodicFlushHandle = setInterval(() => { try { flushQueue(); } catch (e) { /* ignore */ } }, Math.max(1000, batchIntervalSec * 1000));
   // If there are items loaded from disk at startup, attempt an immediate flush shortly after init
@@ -166,18 +196,17 @@ try {
   }
 } catch (e) { /* ignore */ }
 
-// Expose enqueue functions
+// Expose enqueue functions compatible with previous API
 export default {
   enqueueLog: (text) => enqueue(text),
   enqueueVerification: (text) => enqueue(text),
   // For tests or immediate send (avoid using in high-volume situations)
   sendImmediate: async (text, options = {}) => {
-    if (!bot || !chatId) return false;
-    try { await bot.sendMessage(chatId, text, options); return true; } catch (e) { return false; }
+    if (!token || !chatId) return false;
+    try { await sendMessageToChat(chatId, text, options); return true; } catch (e) { return false; }
   },
   // allow manual flush (useful in tests)
-  _flush: flushQueue
-  ,
+  _flush: flushQueue,
   // Return a copy of the queued messages (not removing them)
   getQueue: () => queue.slice()
 };
