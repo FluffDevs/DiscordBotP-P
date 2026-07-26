@@ -3,3 +3,8 @@ node_modules/
 /logs
 netstat.txt
 /Javascript-NodeJS/logs
+/V2/node_modules
+/V2/logs
+/V2/data
+/V2/.env
+V2/.env.example
