@@ -23,7 +23,8 @@ import {
   StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  EmbedBuilder
 } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
@@ -349,6 +350,64 @@ export function initVerification(client) {
     );
   }
 
+  // Une fois la vérification tranchée (acceptée/refusée), le select de rôles et
+  // les boutons Valider/Refuser disparaissent mais le bouton Annuler reste — il
+  // se transforme alors en action de sanction (ban/kick) sur le membre.
+  function buildAnnulerOnlyRow(memberId) {
+    return new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`verif_cancel:${memberId}`).setLabel('Annuler').setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  // ==========================================================================
+  // Sanction (ban/kick) d'un membre déjà traité (accepté ou refusé). Déclenché
+  // par le bouton "Annuler" resté affiché après la décision. Le nom du
+  // modérateur n'apparaît jamais dans l'embed du thread ni dans le DM envoyé
+  // au membre — seul le journal Telegram interne (staff uniquement) le garde
+  // pour la traçabilité.
+  // ==========================================================================
+  async function promptSanctionChoice(interaction, memberId) {
+    const guild = interaction.guild;
+    const target = await guild.members.fetch(memberId).catch(() => null);
+    if (!target) {
+      await interaction.reply({ content: "⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?).", ephemeral: true }).catch(() => {});
+      return;
+    }
+    const threadName = (interaction.channel && interaction.channel.name) || 'inconnu';
+    const embed = new EmbedBuilder()
+      .setColor(0xE67E22)
+      .setTitle('⚖️ Sanctionner ce membre')
+      .setDescription(`Choisis l'action à appliquer à **${target.user.tag}**.`)
+      .addFields(
+        { name: '👤 Membre', value: `<@${target.id}> (${target.id})`, inline: true },
+        { name: '🧵 Post du forum', value: threadName, inline: true }
+      )
+      .setThumbnail(target.user.displayAvatarURL())
+      .setFooter({ text: 'Cette action est privée : seul toi la vois.' });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`verif_sanction_ban:${memberId}`).setLabel('Bannir').setEmoji('🔨').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId(`verif_sanction_kick:${memberId}`).setLabel('Expulser').setEmoji('👢').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId(`verif_sanction_close:${memberId}`).setLabel('Fermer').setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true }).catch(() => {});
+  }
+
+  function buildSanctionResultEmbed(action, target, threadName, reason) {
+    const isBan = action === 'ban';
+    return new EmbedBuilder()
+      .setColor(isBan ? 0xC0392B : 0xE67E22)
+      .setTitle(isBan ? '🔨 Membre banni' : '👢 Membre expulsé')
+      .addFields(
+        { name: '👤 Membre', value: `${target.user.tag} (${target.id})`, inline: true },
+        { name: '🧵 Post du forum', value: threadName || 'inconnu', inline: true },
+        { name: '📝 Raison', value: reason || 'Aucune raison fournie' }
+      )
+      .setThumbnail(target.user.displayAvatarURL())
+      .setTimestamp();
+  }
+
   async function postValidationComponents(thread, memberId, notifyMention) {
     const rows = [];
     const selectRow = buildRoleSelectRow(memberId);
@@ -585,7 +644,7 @@ export function initVerification(client) {
       const summary = appliedRoles.length ? appliedRoles.join(', ') : 'aucun rôle supplémentaire';
       await channel.send(`✅ Vérification acceptée par <@${interaction.user.id}> — rôles appliqués à <@${target.id}> : ${summary}`).catch(() => {});
 
-      try { await interaction.message.edit({ components: [] }); } catch (e) { /* ignore */ }
+      try { await interaction.message.edit({ components: [buildAnnulerOnlyRow(memberId)] }); } catch (e) { /* ignore */ }
 
       store.verifications[memberId] = Object.assign({}, store.verifications[memberId], { status: 'accepted', acceptedAt: Date.now(), appliedRoles, updatedAt: Date.now() });
       saveStore();
@@ -652,7 +711,7 @@ export function initVerification(client) {
       if (target && guild) { try { await target.send(t.rejectedDM(guild.name, reason)); } catch (e) { /* ignore */ } }
 
       await interaction.reply({ content: `Refus enregistré par <@${interaction.user.id}> et transmis au membre.` }).catch(() => {});
-      try { if (interaction.message) await interaction.message.edit({ components: [] }); } catch (e) { /* ignore */ }
+      try { if (interaction.message) await interaction.message.edit({ components: [buildAnnulerOnlyRow(memberId)] }); } catch (e) { /* ignore */ }
 
       setImmediate(() => {
         try { telegram.enqueueVerification(buildTelegramDecision('❌', 'VÉRIFICATION REFUSÉE', target, interaction.user, { '📝 Raison': reason })); } catch (e) { /* ignore */ }
@@ -662,7 +721,11 @@ export function initVerification(client) {
     }
   });
 
-  // Bouton Annuler -> Modal de raison, retire tous les rôles
+  // Bouton Annuler :
+  //  - Tant que la vérification n'est pas tranchée -> comportement historique
+  //    (Modal de raison, annulation de la demande, retire tous les rôles).
+  //  - Une fois la vérification acceptée/refusée -> le bouton reste affiché et
+  //    sert désormais à sanctionner le membre (ban/kick), voir plus bas.
   client.on('interactionCreate', async (interaction) => {
     try {
       if (!interaction.isButton()) return;
@@ -671,10 +734,16 @@ export function initVerification(client) {
       const guild = interaction.guild;
       if (!guild) return;
       if (!isAuthorizedValidator(guild, interaction.member)) {
-        await interaction.reply({ content: "Vous n'êtes pas autorisé·e à annuler une vérification.", ephemeral: true }).catch(() => {});
+        await interaction.reply({ content: "Vous n'êtes pas autorisé·e à effectuer cette action.", ephemeral: true }).catch(() => {});
         return;
       }
       const existing = store.verifications[memberId] || {};
+
+      if (existing.status === 'accepted' || existing.status === 'rejected') {
+        await promptSanctionChoice(interaction, memberId);
+        return;
+      }
+
       const t = i18n[resolveLang(existing.lang)];
       const modal = new ModalBuilder()
         .setCustomId(`verif_cancel_modal:${memberId}`)
@@ -740,6 +809,126 @@ export function initVerification(client) {
       });
     } catch (err) {
       logger.error('Erreur verif_cancel_modal submit: ' + (err && err.message ? err.message : String(err)));
+    }
+  });
+
+  // Bouton Fermer (menu de sanction) -> referme simplement le message éphémère
+  client.on('interactionCreate', async (interaction) => {
+    try {
+      if (!interaction.isButton()) return;
+      if (!interaction.customId.startsWith('verif_sanction_close:')) return;
+      await interaction.update({ content: 'Action annulée.', embeds: [], components: [] }).catch(() => {});
+    } catch (err) {
+      logger.error('Erreur verif_sanction_close: ' + (err && err.message ? err.message : String(err)));
+    }
+  });
+
+  // Boutons Bannir / Expulser -> Modal pour une raison optionnelle
+  client.on('interactionCreate', async (interaction) => {
+    try {
+      if (!interaction.isButton()) return;
+      const isBan = interaction.customId.startsWith('verif_sanction_ban:');
+      const isKick = interaction.customId.startsWith('verif_sanction_kick:');
+      if (!isBan && !isKick) return;
+      const memberId = interaction.customId.split(':')[1];
+      const guild = interaction.guild;
+      if (!guild || !isAuthorizedValidator(guild, interaction.member)) {
+        await interaction.reply({ content: "Vous n'êtes pas autorisé·e à effectuer cette action.", ephemeral: true }).catch(() => {});
+        return;
+      }
+      const action = isBan ? 'ban' : 'kick';
+      const modal = new ModalBuilder()
+        .setCustomId(`verif_sanction_modal:${action}:${memberId}`)
+        .setTitle(isBan ? 'Bannir le membre' : 'Expulser le membre')
+        .addComponents(new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('reason')
+            .setLabel('Raison (optionnel)')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(false)
+            .setPlaceholder('Laisse vide si tu ne souhaites pas préciser de raison')
+            .setMaxLength(1000)
+        ));
+      await interaction.showModal(modal);
+    } catch (err) {
+      logger.error('Erreur verif_sanction button: ' + (err && err.message ? err.message : String(err)));
+    }
+  });
+
+  // Soumission du Modal de sanction -> exécute le ban/kick, poste le résultat
+  // dans le thread et prévient le membre, sans jamais nommer le modérateur.
+  client.on('interactionCreate', async (interaction) => {
+    try {
+      if (!interaction.isModalSubmit()) return;
+      if (!interaction.customId.startsWith('verif_sanction_modal:')) return;
+      const [, action, memberId] = interaction.customId.split(':');
+      const guild = interaction.guild;
+      if (!guild) return;
+      if (!isAuthorizedValidator(guild, interaction.member)) {
+        await interaction.reply({ content: "Vous n'êtes pas autorisé·e à effectuer cette action.", ephemeral: true }).catch(() => {});
+        return;
+      }
+
+      const reason = (interaction.fields.getTextInputValue('reason') || '').trim();
+      const target = await guild.members.fetch(memberId).catch(() => null);
+      if (!target) {
+        await interaction.reply({ content: '⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?).', ephemeral: true }).catch(() => {});
+        return;
+      }
+
+      const threadName = (interaction.channel && interaction.channel.name) || 'inconnu';
+      const targetTag = target.user.tag;
+
+      // Le DM doit partir AVANT la sanction : une fois expulsé/banni, le bot et
+      // le membre ne partagent plus forcément de serveur et l'envoi peut échouer.
+      const existing = store.verifications[memberId] || {};
+      const t = i18n[resolveLang(existing.lang)];
+      try {
+        const dm = action === 'ban' ? t.bannedDM(guild.name, reason) : t.kickedDM(guild.name, reason);
+        await target.send(dm);
+      } catch (e) { /* ignore DM failure (DMs fermés) */ }
+
+      try {
+        // La raison passée à Discord (visible uniquement dans l'audit log, réservé au staff)
+        // ne contient jamais l'identité du modérateur.
+        if (action === 'ban') {
+          await target.ban({ reason: reason || 'Sanction suite à vérification' });
+        } else {
+          await target.kick(reason || 'Sanction suite à vérification');
+        }
+      } catch (e) {
+        await interaction.reply({ content: `⚠️ Échec de la sanction: ${e && e.message ? e.message : String(e)}`, ephemeral: true }).catch(() => {});
+        return;
+      }
+
+      const resultEmbed = buildSanctionResultEmbed(action, target, threadName, reason);
+      const channel = interaction.channel;
+      if (channel) { try { await channel.send({ embeds: [resultEmbed] }); } catch (e) { /* ignore */ } }
+
+      store.verifications[memberId] = Object.assign({}, existing, {
+        status: action === 'ban' ? 'banned' : 'kicked',
+        sanctionAt: Date.now(),
+        sanctionBy: interaction.user.id,
+        sanctionReason: reason || null,
+        updatedAt: Date.now()
+      });
+      saveStore();
+
+      await interaction.reply({ content: `✅ ${action === 'ban' ? 'Bannissement' : 'Expulsion'} effectué·e pour ${targetTag}.`, ephemeral: true }).catch(() => {});
+
+      setImmediate(() => {
+        try {
+          telegram.enqueueVerification(buildTelegramDecision(
+            action === 'ban' ? '🔨' : '👢',
+            action === 'ban' ? 'MEMBRE BANNI' : 'MEMBRE EXPULSÉ',
+            target,
+            interaction.user,
+            { '📝 Raison': reason || 'Aucune raison fournie' }
+          ));
+        } catch (e) { /* ignore */ }
+      });
+    } catch (err) {
+      logger.error('Erreur verif_sanction_modal submit: ' + (err && err.message ? err.message : String(err)));
     }
   });
 }
