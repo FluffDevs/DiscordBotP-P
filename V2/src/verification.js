@@ -215,7 +215,7 @@ export function initVerification(client) {
       } catch (e) { /* ignore, use defaults below */ }
     }
     const choices = [];
-    if (pelucheRole) choices.push({ label: 'Vérifié', value: 'peluche', description: 'Rôle principal de vérification' });
+    if (pelucheRole) choices.push({ label: 'Vérifié', value: 'peluche', description: 'Rôle principal de vérification', default: true });
     if (majorRole) choices.push({ label: 'Majeur', value: 'major' });
     if (minorRole) choices.push({ label: 'Mineur', value: 'minor' });
     if (artistRole) choices.push({ label: 'Artiste', value: 'artist' });
@@ -337,7 +337,7 @@ export function initVerification(client) {
       .setPlaceholder('Sélectionner les rôles à attribuer...')
       .setMinValues(0)
       .setMaxValues(choices.length)
-      .addOptions(choices.map(c => ({ label: c.label, value: c.value, description: c.description })));
+      .addOptions(choices.map(c => ({ label: c.label, value: c.value, description: c.description, default: c.default === true })));
     return new ActionRowBuilder().addComponents(select);
   }
 
@@ -353,6 +353,8 @@ export function initVerification(client) {
     const rows = [];
     const selectRow = buildRoleSelectRow(memberId);
     if (selectRow) rows.push(selectRow);
+    const defaultKeys = buildRoleChoices().filter(c => c.default === true).map(c => c.value);
+    if (defaultKeys.length) pendingRoleSelections.set(memberId, defaultKeys);
     rows.push(buildValidationButtonsRow(memberId));
     const content = [
       '## 🛡️ Validation de la vérification',
