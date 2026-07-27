@@ -32,6 +32,8 @@ import logger from './logger.js';
 import telegram from './telegram.js';
 import { sendLong } from './sendLongMessage.js';
 import i18n, { resolveLang } from './i18n.js';
+import { addSanction } from './moderation.js';
+import { writeJsonAtomic } from './jsonStore.js';
 
 function getEnv(name, fallback = undefined) {
   return process.env[name] ?? fallback;
@@ -120,7 +122,7 @@ export function initVerification(client) {
   }
   function saveStore() {
     try {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), 'utf8');
+      writeJsonAtomic(DATA_FILE, store);
     } catch (err) {
       logger.warn('Impossible de sauvegarder le store de vérifications: ' + (err && err.message ? err.message : String(err)));
     }
@@ -904,6 +906,15 @@ export function initVerification(client) {
       const resultEmbed = buildSanctionResultEmbed(action, target, threadName, reason);
       const channel = interaction.channel;
       if (channel) { try { await channel.send({ embeds: [resultEmbed] }); } catch (e) { /* ignore */ } }
+
+      addSanction(memberId, {
+        type: action,
+        targetTag,
+        reason: reason || null,
+        moderatorId: interaction.user.id,
+        moderatorTag: interaction.user.tag,
+        guildId: guild.id
+      });
 
       store.verifications[memberId] = Object.assign({}, existing, {
         status: action === 'ban' ? 'banned' : 'kicked',

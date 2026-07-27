@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import logger from '../logger.js';
 
 /*
@@ -22,19 +22,11 @@ export default {
         .setRequired(true))
     .addBooleanOption(option =>
       option.setName('execute')
-        .setDescription('Si vrai, interprète le texte comme une commande interne et l\'exécute'))
-    .addBooleanOption(option =>
-      option.setName('as_message')
-        .setDescription('Si vrai, envoie le texte directement dans le canal (peut déclencher d\'autres bots)'))
-    .addBooleanOption(option =>
-      option.setName('webhook')
-        .setDescription('Si vrai, tente d\'envoyer via un webhook pour imiter un utilisateur (nécessite Manage Webhooks)')),
+        .setDescription('Si vrai, interprète le texte comme une commande interne et l\'exécute')),
 
   async execute(interaction) {
     const text = interaction.options.getString('message', true);
-  const executeFlag = interaction.options.getBoolean('execute') ?? false;
-  const asMessage = interaction.options.getBoolean('as_message') ?? false;
-  const useWebhook = interaction.options.getBoolean('webhook') ?? false;
+    const executeFlag = interaction.options.getBoolean('execute') ?? false;
 
     // Security: only allow owner (OWNER_ID in .env) or members with Administrator permission
     const ownerId = process.env.OWNER_ID;
@@ -44,43 +36,22 @@ export default {
       return interaction.reply({ content: 'Vous n\'êtes pas autorisé à utiliser cette commande.', ephemeral: true });
     }
 
-    // If not executing as a command, either send as a normal channel message (can trigger other bots)
-    // or reply to the interaction depending on the asMessage flag.
+    // Le message doit venir du bot sans aucun lien visible avec l'auteur de la
+    // commande : on ne répond jamais à l'interaction avec le texte (Discord
+    // afficherait "a utilisé /say [auteur]") ni via un webhook qui imiterait
+    // l'auteur. On envoie un message normal du bot, puis on referme la
+    // confirmation éphémère (visible seulement par l'auteur) sans laisser de trace.
     if (!executeFlag) {
-      // By default, send the message into the channel so other bots can see it.
-      if (asMessage) {
-        // Try webhook first when sending as message, because many bots ignore messages sent by bot accounts.
-        await interaction.deferReply({ ephemeral: true });
-        const canManageWebhooks = !!(interaction.guild && interaction.guild.members && interaction.guild.members.me && interaction.guild.members.me.permissions && interaction.guild.members.me.permissions.has && interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageWebhooks));
-        if (canManageWebhooks) {
-          try {
-            const webhookName = `${interaction.user.username}`;
-            const avatar = typeof interaction.user.displayAvatarURL === 'function' ? interaction.user.displayAvatarURL() : undefined;
-            const webhook = await interaction.channel.createWebhook({ name: webhookName, avatar });
-            await webhook.send({ content: text });
-            try { await webhook.delete('cleanup after /say'); } catch (e) { logger.debug(`webhook cleanup failed (/say): ${e && e.message ? e.message : e}`); }
-            logger.info(`/say sent via webhook by ${interaction.user.tag} in ${interaction.guild ? interaction.guild.id : 'DM'}`);
-            return interaction.editReply({ content: 'Message envoyé (via webhook).' });
-          } catch (err) {
-            logger.error(['Erreur lors de l\'envoi via webhook (fallback to normal send):', err]);
-            // fallback to normal send below
-          }
-        }
-        try {
-          await interaction.channel.send(text);
-          logger.info(`/say sent as channel message by ${interaction.user.tag} in ${interaction.guild ? interaction.guild.id : 'DM'}`);
-          return interaction.editReply({ content: 'Message envoyé.' });
-        } catch (err2) {
-          logger.error(['Erreur lors de l\'envoi du message:', err2]);
-          if (!interaction.replied && !interaction.deferred) {
-            return interaction.reply({ content: `Erreur lors de l'envoi: ${err2.message || String(err2)}`, ephemeral: true });
-          }
-          return interaction.followUp({ content: `Erreur lors de l'envoi: ${err2.message || String(err2)}`, ephemeral: true });
-        }
+      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      try {
+        await interaction.channel.send(text);
+        logger.info(`/say message envoyé par ${interaction.user.tag} dans ${interaction.guild ? interaction.guild.id : 'DM'}`, { noTelegram: true });
+        await interaction.deleteReply().catch(() => {});
+      } catch (err) {
+        logger.error(['Erreur lors de l\'envoi du message /say:', err]);
+        await interaction.editReply({ content: `Erreur lors de l'envoi: ${err && err.message ? err.message : String(err)}` }).catch(() => {});
       }
-
-      // Default: send as a reply to the interaction (visible as from the bot but acknowledges the interaction)
-      return interaction.reply({ content: text });
+      return;
     }
 
     // Otherwise, interpret text as a prefix command and execute the matching command module
@@ -99,7 +70,7 @@ export default {
         return interaction.reply({ content: `Commande introuvable: ${name}`, ephemeral: true });
       }
 
-  const mod = await import(pathToFileURL(commandFile));
+  const mod = await import(pathToFileURL(commandFile).href);
       const command = mod.default ?? mod;
       if (!command || typeof command.execute !== 'function') {
         return interaction.reply({ content: `Le fichier de commande ${name} n'expose pas une fonction execute.`, ephemeral: true });
@@ -136,9 +107,3 @@ export default {
     }
   }
 };
-
-function pathToFileURL(p) {
-  // small helper to convert path to file URL for dynamic import
-  const url = new URL(`file://${p.replace(/\\/g, '/')}`);
-  return url.href;
-}
