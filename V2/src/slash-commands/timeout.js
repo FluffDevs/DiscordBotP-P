@@ -43,14 +43,17 @@ export default {
       if (user.id === interaction.user.id) { await interaction.reply({ content: 'Tu ne peux pas te mute toi-même.', ephemeral: true }); return; }
       if (user.id === interaction.client.user.id) { await interaction.reply({ content: 'Je ne vais pas me mute moi-même 🙃', ephemeral: true }); return; }
 
+      // Toujours défer avant le moindre appel réseau (fetch de membre, etc.) :
+      // Discord invalide l'interaction si elle n'est pas accusée réception
+      // sous 3s, et un fetch peut prendre plus longtemps que ça.
+      await interaction.deferReply({ ephemeral: true });
+
       const targetMember = await guild.members.fetch(user.id).catch(() => null);
-      if (!targetMember) { await interaction.reply({ content: 'Ce membre n\'est pas sur le serveur.', ephemeral: true }); return; }
+      if (!targetMember) { await interaction.editReply({ content: 'Ce membre n\'est pas sur le serveur.' }); return; }
       if (!targetMember.moderatable) {
-        await interaction.reply({ content: 'Je ne peux pas mute ce membre (rôle trop haut ou permissions insuffisantes).', ephemeral: true });
+        await interaction.editReply({ content: 'Je ne peux pas mute ce membre (rôle trop haut ou permissions insuffisantes).' });
         return;
       }
-
-      await interaction.deferReply({ ephemeral: true });
 
       const durationLabel = formatDuration(ms);
 

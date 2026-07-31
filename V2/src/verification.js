@@ -292,21 +292,8 @@ export function initVerification(client) {
       lastRequest.set(memberId, now);
       setTimeout(() => { try { lastRequest.delete(memberId); } catch (e) { /* ignore */ } }, REQUEST_COOLDOWN_MS + 1000);
 
-      if (nonVerifiedRole) {
-        const role = resolveRoleRef(guild, nonVerifiedRole);
-        if (role) await member.roles.add(role).catch((err) => { logger.warn('Échec ajout nonVerifiedRole: ' + (err && err.message ? err.message : String(err)), { noTelegram: true }); });
-      }
-
       const lang = resolveLang(interaction.values[0]);
       const t = i18n[lang];
-
-      store.verifications[memberId] = Object.assign({}, existing, {
-        lang,
-        status: 'awaiting_modal',
-        createdAt: existing.createdAt ?? Date.now(),
-        updatedAt: Date.now()
-      });
-      saveStore();
 
       const modal = new ModalBuilder()
         .setCustomId(`verif_modal:${memberId}:${lang}`)
@@ -323,7 +310,24 @@ export function initVerification(client) {
         modal.addComponents(new ActionRowBuilder().addComponents(input));
       }
 
+      // showModal doit être la toute première réponse à l'interaction et doit
+      // arriver sous 3s — on l'appelle donc avant tout appel réseau plus lent
+      // (ajout de rôle, écriture disque) pour ne jamais risquer "L'application
+      // n'a pas répondu à temps".
       await interaction.showModal(modal);
+
+      if (nonVerifiedRole) {
+        const role = resolveRoleRef(guild, nonVerifiedRole);
+        if (role) await member.roles.add(role).catch((err) => { logger.warn('Échec ajout nonVerifiedRole: ' + (err && err.message ? err.message : String(err)), { noTelegram: true }); });
+      }
+
+      store.verifications[memberId] = Object.assign({}, existing, {
+        lang,
+        status: 'awaiting_modal',
+        createdAt: existing.createdAt ?? Date.now(),
+        updatedAt: Date.now()
+      });
+      saveStore();
     } catch (err) {
       logger.error('Erreur verif_lang_select: ' + (err && err.message ? err.message : String(err)));
     }
@@ -370,9 +374,12 @@ export function initVerification(client) {
   // ==========================================================================
   async function promptSanctionChoice(interaction, memberId) {
     const guild = interaction.guild;
+    // Toujours accuser réception avant le fetch (appel réseau) qui suit : sous
+    // 3s Discord invalide l'interaction sinon ("L'application n'a pas répondu à temps").
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
     const target = await guild.members.fetch(memberId).catch(() => null);
     if (!target) {
-      await interaction.reply({ content: "⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?).", ephemeral: true }).catch(() => {});
+      await interaction.editReply({ content: "⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?)." }).catch(() => {});
       return;
     }
     const threadName = (interaction.channel && interaction.channel.name) || 'inconnu';
@@ -393,7 +400,7 @@ export function initVerification(client) {
       new ButtonBuilder().setCustomId(`verif_sanction_close:${memberId}`).setLabel('Fermer').setStyle(ButtonStyle.Secondary)
     );
 
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true }).catch(() => {});
+    await interaction.editReply({ embeds: [embed], components: [row] }).catch(() => {});
   }
 
   function buildSanctionResultEmbed(action, target, threadName, reason) {
@@ -871,10 +878,14 @@ export function initVerification(client) {
         return;
       }
 
+      // Toujours accuser réception avant le fetch (appel réseau) qui suit : sous
+      // 3s Discord invalide l'interaction sinon ("L'application n'a pas répondu à temps").
+      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+
       const reason = (interaction.fields.getTextInputValue('reason') || '').trim();
       const target = await guild.members.fetch(memberId).catch(() => null);
       if (!target) {
-        await interaction.reply({ content: '⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?).', ephemeral: true }).catch(() => {});
+        await interaction.editReply({ content: '⚠️ Membre introuvable sur le serveur (déjà parti, expulsé ou banni ?).' }).catch(() => {});
         return;
       }
 
@@ -899,7 +910,7 @@ export function initVerification(client) {
           await target.kick(reason || 'Sanction suite à vérification');
         }
       } catch (e) {
-        await interaction.reply({ content: `⚠️ Échec de la sanction: ${e && e.message ? e.message : String(e)}`, ephemeral: true }).catch(() => {});
+        await interaction.editReply({ content: `⚠️ Échec de la sanction: ${e && e.message ? e.message : String(e)}` }).catch(() => {});
         return;
       }
 
@@ -925,7 +936,7 @@ export function initVerification(client) {
       });
       saveStore();
 
-      await interaction.reply({ content: `✅ ${action === 'ban' ? 'Bannissement' : 'Expulsion'} effectué·e pour ${targetTag}.`, ephemeral: true }).catch(() => {});
+      await interaction.editReply({ content: `✅ ${action === 'ban' ? 'Bannissement' : 'Expulsion'} effectué·e pour ${targetTag}.` }).catch(() => {});
 
       setImmediate(() => {
         try {

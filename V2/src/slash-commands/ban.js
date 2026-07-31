@@ -34,13 +34,16 @@ export default {
       if (user.id === interaction.user.id) { await interaction.reply({ content: 'Tu ne peux pas te bannir toi-même.', ephemeral: true }); return; }
       if (user.id === interaction.client.user.id) { await interaction.reply({ content: 'Je ne vais pas me bannir moi-même 🙃', ephemeral: true }); return; }
 
+      // Toujours défer avant le moindre appel réseau (fetch de membre, etc.) :
+      // Discord invalide l'interaction si elle n'est pas accusée réception
+      // sous 3s, et un fetch peut prendre plus longtemps que ça.
+      await interaction.deferReply({ ephemeral: true });
+
       const targetMember = await guild.members.fetch(user.id).catch(() => null);
       if (targetMember && !targetMember.bannable) {
-        await interaction.reply({ content: 'Je ne peux pas bannir ce membre (rôle trop haut ou permissions insuffisantes).', ephemeral: true });
+        await interaction.editReply({ content: 'Je ne peux pas bannir ce membre (rôle trop haut ou permissions insuffisantes).' });
         return;
       }
-
-      await interaction.deferReply({ ephemeral: true });
 
       try {
         const dm = new EmbedBuilder()

@@ -26,14 +26,17 @@ export default {
       const user = interaction.options.getUser('membre', true);
       const reason = (interaction.options.getString('raison') || '').trim();
 
+      // Toujours défer avant le moindre appel réseau (fetch de membre, etc.) :
+      // Discord invalide l'interaction si elle n'est pas accusée réception
+      // sous 3s, et un fetch peut prendre plus longtemps que ça.
+      await interaction.deferReply({ ephemeral: true });
+
       const targetMember = await guild.members.fetch(user.id).catch(() => null);
-      if (!targetMember) { await interaction.reply({ content: 'Ce membre n\'est pas sur le serveur.', ephemeral: true }); return; }
+      if (!targetMember) { await interaction.editReply({ content: 'Ce membre n\'est pas sur le serveur.' }); return; }
       if (!targetMember.communicationDisabledUntil || targetMember.communicationDisabledUntilTimestamp < Date.now()) {
-        await interaction.reply({ content: 'Ce membre n\'est pas en sourdine actuellement.', ephemeral: true });
+        await interaction.editReply({ content: 'Ce membre n\'est pas en sourdine actuellement.' });
         return;
       }
-
-      await interaction.deferReply({ ephemeral: true });
 
       try {
         await targetMember.timeout(null, reason || undefined);
