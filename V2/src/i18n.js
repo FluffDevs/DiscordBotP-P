@@ -11,8 +11,8 @@
 const DEFAULT_QUESTIONS_FR = [
   { id: 'furry', label: 'Es-tu Furry ? Depuis quand ?', style: 'Short', required: true, maxLength: 200, placeholder: 'Ex : Oui, depuis 2019' },
   { id: 'discovery', label: 'Comment as-tu découvert le serveur ?', style: 'Short', required: true, maxLength: 200 },
-  { id: 'artist', label: 'Es-tu artiste (commissions) ?', style: 'Short', required: true, maxLength: 100, placeholder: 'Oui / Non + précisions' },
-  { id: 'age', label: 'Es-tu majeur ou mineur ?', style: 'Short', required: true, maxLength: 50, placeholder: 'majeur / mineur' },
+  { id: 'artist', label: "Es-tu artiste (commissions) ? Si c'est le cas donne nous un X/Instagram avec tes arts !", style: 'Short', required: true, maxLength: 100, placeholder: 'Oui / Non + précisions' },
+  { id: 'age', label: 'Es-tu majeur ou mineur ? If so, share your X/Instagram with us so we can see your art !', style: 'Short', required: true, maxLength: 50, placeholder: 'majeur / mineur' },
   { id: 'presentation', label: 'Présente-toi en quelques lignes', style: 'Paragraph', required: true, maxLength: 1000 }
 ];
 
