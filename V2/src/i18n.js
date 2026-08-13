@@ -1,5 +1,5 @@
 /*
- * Peluche Bot V2 — programme personnel de Electro / MathéoCASSY
+ * Radio Bot V2 — programme personnel de Electro / MathéoCASSY
  * https://github.com/MatheoCASSY/
  *
  * Textes et questions du formulaire de vérification, en français et en anglais.
@@ -42,7 +42,7 @@ export const i18n = {
     langLabel: 'Français',
     langEmoji: '🇫🇷',
     langPrompt: 'Choisis ta langue / Choose your language :',
-    modalTitle: 'Vérification — Peluche Bot',
+    modalTitle: 'Vérification — Radio Bot',
     questions: questionsFr,
     ephemeralConfirm: '✅ Merci ! Tes réponses ont été envoyées, vérifie tes DMs pour le récapitulatif.',
     confirmationMessage: 'Merci ! Tes réponses ont bien été reçues et transmises à l\'équipe de modération. 🎉',
@@ -60,7 +60,7 @@ export const i18n = {
     langLabel: 'English',
     langEmoji: '🇬🇧',
     langPrompt: 'Choose your language / Choisis ta langue :',
-    modalTitle: 'Verification — Peluche Bot',
+    modalTitle: 'Verification — Radio Bot',
     questions: questionsEn,
     ephemeralConfirm: '✅ Thanks! Your answers have been sent, check your DMs for a summary.',
     confirmationMessage: 'Thanks! Your answers have been received and forwarded to the moderation team. 🎉',
