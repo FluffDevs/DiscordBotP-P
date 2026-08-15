@@ -11,7 +11,7 @@
 const DEFAULT_QUESTIONS_FR = [
   { id: 'furry', label: 'Es-tu Furry ? Depuis quand ?', style: 'Short', required: true, maxLength: 200, placeholder: 'Ex : Oui, depuis 2019' },
   { id: 'discovery', label: 'Comment as-tu découvert le serveur ?', style: 'Short', required: true, maxLength: 200 },
-  { id: 'artist', label: "Es-tu artiste (commissions) ?", style: 'Short', required: true, maxLength: 100, placeholder: 'Oui / Non + lien Insta/X si tu en as' },
+  { id: 'artist', label: "Es-tu artiste (commissions) ? Insta/X ?", style: 'Short', required: true, maxLength: 100, placeholder: 'Oui / Non + lien' },
   { id: 'age', label: 'Es-tu majeur ou mineur ?', style: 'Short', required: true, maxLength: 50, placeholder: 'majeur / mineur' },
   { id: 'presentation', label: 'Présente-toi en quelques lignes', style: 'Paragraph', required: true, maxLength: 1000 }
 ];
@@ -19,7 +19,7 @@ const DEFAULT_QUESTIONS_FR = [
 const DEFAULT_QUESTIONS_EN = [
   { id: 'furry', label: 'Are you a Furry? Since when?', style: 'Short', required: true, maxLength: 200, placeholder: 'E.g.: Yes, since 2019' },
   { id: 'discovery', label: 'How did you find this server?', style: 'Short', required: true, maxLength: 200 },
-  { id: 'artist', label: 'Are you an artist (commissions)?', style: 'Short', required: true, maxLength: 100, placeholder: 'Yes / No + details' },
+  { id: 'artist', label: 'Artist (commissions)? Insta/X link?', style: 'Short', required: true, maxLength: 100, placeholder: 'Yes / No + link' },
   { id: 'age', label: 'Are you an adult or a minor?', style: 'Short', required: true, maxLength: 50, placeholder: 'adult / minor' },
   { id: 'presentation', label: 'Introduce yourself briefly', style: 'Paragraph', required: true, maxLength: 1000 }
 ];
