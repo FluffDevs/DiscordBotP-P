@@ -289,9 +289,6 @@ export function initVerification(client) {
         return;
       }
 
-      lastRequest.set(memberId, now);
-      setTimeout(() => { try { lastRequest.delete(memberId); } catch (e) { /* ignore */ } }, REQUEST_COOLDOWN_MS + 1000);
-
       const lang = resolveLang(interaction.values[0]);
       const t = i18n[lang];
 
@@ -520,6 +517,9 @@ export function initVerification(client) {
       const lang = resolveLang(parts[2]);
       const t = i18n[lang];
       const guild = interaction.guild;
+
+      lastRequest.set(memberId, Date.now());
+      setTimeout(() => { try { lastRequest.delete(memberId); } catch (e) { /* ignore */ } }, REQUEST_COOLDOWN_MS + 1000);
 
       const answers = t.questions.map(q => ({
         question: q.label,
