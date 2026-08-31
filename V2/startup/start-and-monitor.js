@@ -100,6 +100,14 @@ const INITIAL_BACKOFF_MS = Number(process.env.STARTUP_INITIAL_BACKOFF_MS ?? proc
 const BACKOFF_MULTIPLIER = Number(process.env.STARTUP_BACKOFF_MULTIPLIER ?? process.env.BACKOFF_MULTIPLIER ?? '2');
 const RESTART_ENABLED = !!process.env.STARTUP_RESTART_ENABLED || MAX_RETRIES > 0;
 
+// Watchdog : si le bot ne signale jamais "BOT EN LIGNE" (ex: login Discord
+// bloqué/rejete sans faire planter le process - ce qui est arrive en prod le
+// 2026-08-30, panne reseau) le process peut rester "vivant" indefiniment sans
+// jamais etre reellement connecte. On force alors un kill pour que la boucle
+// de supervision ci-dessous s'en charge normalement (backoff + retry).
+const LOGIN_TIMEOUT_MS = Number(process.env.STARTUP_LOGIN_TIMEOUT_MS ?? '45000');
+const READY_MARKER = /BOT EN LIGNE/;
+
 // spawn the bot process and return a controller for it
 function spawnBot() {
   const indexPath = path.join(ROOT, 'src', 'index.js');
@@ -122,10 +130,21 @@ function spawnBot() {
   const outStream = fs.createWriteStream(outLog, { flags: 'a' });
   const errStream = fs.createWriteStream(errLog, { flags: 'a' });
 
+  // Watchdog de login : declenche un kill si "BOT EN LIGNE" n'apparait jamais
+  // dans les logs sous LOGIN_TIMEOUT_MS. Desarme des que le marqueur est vu,
+  // ou quand le process se termine de lui-meme (rien a surveiller de plus).
+  const loginWatchdog = setTimeout(() => {
+    const msg = `startup: aucune connexion Discord confirmee sous ${LOGIN_TIMEOUT_MS}ms - process probablement bloque, kill force pour redemarrage.`;
+    try { logger.warn && logger.warn(msg, { noTelegram: true }); } catch (e) {}
+    if (telegram && telegram.sendImmediate) telegram.sendImmediate(msg);
+    try { child.kill('SIGKILL'); } catch (e) {}
+  }, LOGIN_TIMEOUT_MS);
+
   child.stdout.on('data', (d) => {
     const s = d.toString();
     try { logger.info && logger.info(s.trim(), { noTelegram: true }); } catch (e) {}
     outStream.write(s);
+    if (READY_MARKER.test(s)) clearTimeout(loginWatchdog);
   });
   child.stderr.on('data', (d) => {
     const s = d.toString();
@@ -139,6 +158,8 @@ function spawnBot() {
     try { logger.error && logger.error(msg, { noTelegram: true }); } catch (e) {}
     if (telegram && telegram.sendImmediate) telegram.sendImmediate(msg);
   });
+
+  child.on('exit', () => clearTimeout(loginWatchdog));
 
   // cleanup streams when the child terminates
   child._outStream = outStream; // attach for later cleanup

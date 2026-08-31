@@ -168,6 +168,10 @@ if (!token) {
 } else {
   client.login(token).catch(err => {
     logger.error('Échec login : ' + (err && err.message ? err.message : String(err)));
+    // Ne jamais rester en vie sans etre connecte a Discord : mieux vaut que
+    // le process meure et que start-and-monitor.js le relance (avec backoff)
+    // que de tourner indefiniment "actif" pour systemd mais deconnecte pour de vrai.
+    process.exit(1);
   });
   // Initialiser la logique de vérification (langue, modal, validation par composants)
   initVerification(client);
