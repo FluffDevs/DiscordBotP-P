@@ -93,8 +93,48 @@ function dayLabelShort(key, tz) {
   }).format(d);
 }
 
-function unix(iso) {
-  return Math.floor(new Date(iso).getTime() / 1000);
+/**
+ * Les `debut`/`fin` de l'API sont des heures MURALES du fuseau du planning
+ * (`timezone`), étiquetées `...Z` par commodité côté serveur de diffusion — ce
+ * ne sont PAS de vrais instants UTC. "2026-09-08T08:00:00Z" = 08:00 à Paris.
+ * On reconstruit ici l'instant réel pour que les timestamps Discord tombent
+ * juste dans tous les fuseaux.
+ */
+function wallIsoToInstant(iso, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/.exec(String(iso));
+  if (!m) return new Date(iso);
+  const [, y, mo, da, h, mi, s] = m;
+  const naiveUtc = Date.UTC(+y, +mo - 1, +da, +h, +mi, +(s ?? 0));
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+    .formatToParts(new Date(naiveUtc))
+    .reduce((acc, p) => ((acc[p.type] = p.value), acc), {});
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return new Date(naiveUtc - (asUtc - naiveUtc));
+}
+
+function unix(iso, tz) {
+  return Math.floor(wallIsoToInstant(iso, tz).getTime() / 1000);
+}
+
+/** Clé de jour civil (YYYY-MM-DD) d'un slot : la date murale de son `debut`. */
+function slotDayKey(iso) {
+  return String(iso).slice(0, 10);
 }
 
 /** Liste des HORIZON_DAYS clés de jour à partir d'aujourd'hui (fuseau tz). */
@@ -124,10 +164,10 @@ export async function fetchSchedule() {
 // --------------------------------------------------------------------------- //
 // Rendu
 // --------------------------------------------------------------------------- //
-function slotLine(slot) {
+function slotLine(slot, tz) {
   const icon = slot.en_direct ? '🔴' : slot.type === 'emission' ? '🎙️' : '🎵';
   const tag = slot.en_direct ? ' _(direct)_' : '';
-  let line = `${icon} <t:${unix(slot.debut)}:t> – <t:${unix(slot.fin)}:t> · **${slot.nom}**${tag}`;
+  let line = `${icon} <t:${unix(slot.debut, tz)}:t> – <t:${unix(slot.fin, tz)}:t> · **${slot.nom}**${tag}`;
   const desc = String(slot.description ?? '').trim();
   if (desc) line += `\n> ${desc.replace(/\n/g, '\n> ')}`;
   return line;
@@ -135,9 +175,9 @@ function slotLine(slot) {
 
 export function buildDayEmbed(schedule, key) {
   const { timezone, slots } = schedule;
-  const daySlots = slots.filter((s) => dayKey(new Date(s.debut), timezone) === key);
+  const daySlots = slots.filter((s) => slotDayKey(s.debut) === key);
   const lines = daySlots.length
-    ? daySlots.map(slotLine).join('\n\n')
+    ? daySlots.map((s) => slotLine(s, timezone)).join('\n\n')
     : "_Aucun programme annoncé pour cette journée — playlist musicale en continu._";
 
   return new EmbedBuilder()
