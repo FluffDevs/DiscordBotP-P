@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { initVerification } from './verification.js';
 import { initArtistForum } from './artistForum.js';
+import { initRadioSchedule } from './radioSchedule.js';
 import logger, { commandInvocation } from './logger.js';
 
 const token = process.env.DISCORD_TOKEN;
@@ -178,4 +179,6 @@ if (!token) {
   initVerification(client);
   // Initialiser le forum des artistes (synchro quotidienne depuis l'API FluffRadio)
   initArtistForum(client);
+  // Initialiser le programme radio (message d'ancrage + menu dans un salon dédié)
+  initRadioSchedule(client);
 }
